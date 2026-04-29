@@ -220,9 +220,29 @@ class Graph {
   constructor(n) {
     this.nodes = [];
     this.edges = {};
-    for(let i=0; i<n; i++){
-      this.nodes.push({id: i, x: Math.random(), y: Math.random()});
-      this.edges[i] = [];
+    const MIN_DIST = 0.15;
+
+function isFarEnough(nodes, x, y) {
+  return nodes.every(node => {
+    let dx = node.x - x;
+    let dy = node.y - y;
+    return Math.hypot(dx, dy) > MIN_DIST;
+  });
+}
+
+for (let i = 0; i < n; i++) {
+  let x, y;
+  let attempts = 0;
+
+  do {
+    x = 0.1 + Math.random() * 0.8;
+    y = 0.1 + Math.random() * 0.8;
+    attempts++;
+  } while (!isFarEnough(this.nodes, x, y) && attempts < 100);
+
+  this.nodes.push({ id: i, x, y });
+  this.edges[i] = [];
+}
     }
     // Ensure connectivity
     for(let i=0; i<n-1; i++){ this.connect(i, i+1); }
