@@ -3,125 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Hamilton Galaxy Ultra</title>
-    <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&display=swap" rel="stylesheet">
+    <title>Hamilton Dreamy Galaxy</title>
     <style>
         :root {
-            --neon-blue: #00f2ff;
-            --neon-pink: #ff00ff;
-            --glass: rgba(255, 255, 255, 0.1);
+            --p1: #ff9a9e; --p2: #fad0c4; --p3: #a1c4fd; --p4: #c2e9fb;
+            --text: #ffffff;
+            --glow: 0 0 15px rgba(255, 255, 255, 0.8);
         }
 
         body {
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            background: #02020a;
-            color: #fff;
-            font-family: 'Syncopate', sans-serif;
-            touch-action: none; /* Ngăn scroll trên mobile */
+            margin: 0; padding: 0; overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(-45deg, #2c3e50, #4ca1af, #2c3e50, #000000);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            color: var(--text);
+            touch-action: none;
         }
 
-        /* Giao diện Overlay hiện đại */
-        .game-ui {
-            position: absolute;
-            width: 100%;
-            padding: 20px;
-            box-sizing: border-box;
-            display: flex;
-            justify-content: space-between;
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Overlay UI */
+        .hud {
+            position: absolute; width: 100%; top: 20px;
+            display: flex; justify-content: space-around;
+            pointer-events: none; z-index: 10;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            padding: 8px 25px;
+            border-radius: 50px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            font-weight: bold; letter-spacing: 1px;
+        }
+
+        .controls {
+            position: absolute; bottom: 40px; left: 50%;
+            transform: translateX(-50%); display: flex; gap: 20px;
             z-index: 10;
-            pointer-events: none;
-        }
-
-        .glass-panel {
-            background: var(--glass);
-            backdrop-filter: blur(15px);
-            padding: 10px 25px;
-            border-radius: 12px;
-            border: 1px solid rgba(255,255,255,0.2);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-        }
-
-        .stats { font-size: clamp(0.7rem, 2vw, 1.1rem); letter-spacing: 2px; }
-
-        .btn-group {
-            position: absolute;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 15px;
-            pointer-events: all;
         }
 
         button {
-            background: var(--glass);
-            border: 1px solid var(--neon-blue);
-            color: var(--neon-blue);
-            padding: 12px 30px;
-            border-radius: 50px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid white;
+            color: white;
+            padding: 12px 35px;
+            border-radius: 30px;
             cursor: pointer;
             font-weight: bold;
-            transition: 0.3s;
+            transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             backdrop-filter: blur(5px);
-            font-family: inherit;
-            font-size: 0.8rem;
+            text-transform: uppercase;
         }
 
         button:hover {
-            background: var(--neon-blue);
-            color: #000;
-            box-shadow: 0 0 25px var(--neon-blue);
+            background: white; color: #4ca1af;
+            transform: translateY(-5px);
+            box-shadow: var(--glow);
         }
 
-        #game-canvas { display: block; width: 100vw; height: 100vh; }
+        #game-canvas { display: block; filter: contrast(1.1); }
 
-        /* Màn hình thắng cuộc xịn xò */
-        #win-screen {
-            position: fixed;
-            inset: 0;
-            background: radial-gradient(circle, rgba(20,0,50,0.9) 0%, rgba(0,0,0,1) 100%);
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
-            text-align: center;
+        /* Win Modal */
+        #win-modal {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+            display: none; justify-content: center; align-items: center; z-index: 100;
         }
 
-        #win-screen h1 {
-            font-size: clamp(2rem, 8vw, 5rem);
-            margin: 0;
-            background: linear-gradient(to right, var(--neon-blue), var(--neon-pink));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 0 20px var(--neon-blue));
+        .modal-body {
+            background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
+            padding: 50px; border-radius: 40px; text-align: center;
+            border: 4px solid white; box-shadow: 0 0 50px rgba(255,255,255,0.4);
+            color: #333;
         }
     </style>
 </head>
 <body>
 
-    <div class="game-ui">
-        <div class="glass-panel stats">LEVEL: <span id="lvl" style="color: var(--neon-blue)">1</span></div>
-        <div class="glass-panel stats">TIME: <span id="timer">00:00</span></div>
+    <div class="hud">
+        <div class="glass-card">LEVEL: <span id="lvl">1</span></div>
+        <div class="glass-card">TIME: <span id="time">00:00</span></div>
     </div>
 
-    <div class="btn-group">
-        <button onclick="game.undo()">UNDO</button>
-        <button onclick="game.restart()">RESTART</button>
+    <div class="controls">
+        <button onclick="game.undo()">Hoàn tác</button>
+        <button onclick="game.restart()">Chơi lại</button>
     </div>
 
     <canvas id="game-canvas"></canvas>
 
-    <div id="win-screen">
-        <h1 id="win-title">GALAXY LINKED</h1>
-        <p id="win-meta" style="letter-spacing: 5px; margin: 20px 0; color: #aaa;"></p>
-        <button onclick="game.nextLevel()" style="padding: 20px 60px;">NEXT GALAXY</button>
+    <div id="win-modal">
+        <div class="modal-body">
+            <h1 style="margin:0; font-size: 3rem;">TUYỆT VỜI!</h1>
+            <p id="result-text" style="font-size: 1.2rem; margin: 20px 0; font-weight: 500;"></p>
+            <button onclick="game.nextLevel()" style="background: #333; color: white;">Tiếp theo</button>
+        </div>
     </div>
 
 <script>
-class GalaxyPro {
+class DreamyGalaxy {
     constructor() {
         this.canvas = document.getElementById('game-canvas');
         this.ctx = this.canvas.getContext('2d');
@@ -129,10 +116,9 @@ class GalaxyPro {
         this.nodes = [];
         this.edges = [];
         this.path = [];
-        this.particles = [];
+        this.clouds = [];
         this.isWon = false;
         this.startTime = Date.now();
-        this.pixelRatio = window.devicePixelRatio || 1;
 
         this.init();
         this.animate();
@@ -141,15 +127,24 @@ class GalaxyPro {
     init() {
         this.resize();
         window.addEventListener('resize', () => this.resize());
-        this.setupInput();
+        this.createClouds();
         this.generateLevel();
+        this.setupInput();
     }
 
     resize() {
-        this.canvas.width = window.innerWidth * this.pixelRatio;
-        this.canvas.height = window.innerHeight * this.pixelRatio;
-        this.ctx.scale(this.pixelRatio, this.pixelRatio);
-        if (this.nodes.length > 0) this.generateLevel(); // Re-layout nodes on resize
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+    }
+
+    createClouds() {
+        this.clouds = Array.from({length: 15}, () => ({
+            x: Math.random() * window.innerWidth,
+            y: Math.random() * window.innerHeight,
+            r: 50 + Math.random() * 150,
+            v: 0.2 + Math.random() * 0.5,
+            opacity: 0.1 + Math.random() * 0.2
+        }));
     }
 
     generateLevel() {
@@ -158,31 +153,36 @@ class GalaxyPro {
         this.path = [];
         this.isWon = false;
         this.startTime = Date.now();
-        document.getElementById('win-screen').style.display = 'none';
+        document.getElementById('win-modal').style.display = 'none';
 
         const count = 4 + this.level;
-        // Padding động dựa trên kích thước màn hình
-        const padX = window.innerWidth * 0.15;
-        const padY = window.innerHeight * 0.2;
+        const pad = 100;
 
         for(let i=0; i<count; i++) {
             let x, y, ok = false;
             while(!ok) {
-                x = padX + Math.random() * (window.innerWidth - padX*2);
-                y = padY + Math.random() * (window.innerHeight - padY*2);
-                ok = this.nodes.every(n => Math.hypot(n.x - x, n.y - y) > 80);
+                x = pad + Math.random() * (this.canvas.width - pad*2);
+                y = pad + Math.random() * (this.canvas.height - pad*2);
+                ok = this.nodes.every(n => Math.hypot(n.x - x, n.y - y) > 100);
             }
-            this.nodes.push({id: i, x, y, r: Math.random()*2 + 3});
+            this.nodes.push({
+                id: i, x, y, 
+                baseX: x, baseY: y,
+                phase: Math.random() * Math.PI * 2,
+                color: `hsl(${200 + Math.random() * 60}, 70%, 85%)`
+            });
         }
 
-        // Đảm bảo game giải được (Hamilton Path)
-        const seq = [...Array(count).keys()].sort(() => Math.random() - 0.5);
-        for(let i=0; i<count-1; i++) this.edges.push([seq[i], seq[i+1]]);
-        
-        // Thêm cạnh nhiễu (Rõ ràng hơn)
-        for(let i=0; i<count*1.5; i++) {
-            const a = Math.floor(Math.random()*count);
-            const b = Math.floor(Math.random()*count);
+        // Tạo Hamilton Path mẫu (Solution)
+        const sequence = [...Array(count).keys()].sort(() => Math.random() - 0.5);
+        for(let i=0; i<count-1; i++) {
+            this.edges.push([sequence[i], sequence[i+1]]);
+        }
+
+        // Thêm cạnh nhiễu (Phải rõ hơn bản trước)
+        for(let i=0; i<count; i++) {
+            const a = Math.floor(Math.random() * count);
+            const b = Math.floor(Math.random() * count);
             if(a !== b && !this.edges.some(e => e.includes(a) && e.includes(b))) {
                 this.edges.push([a, b]);
             }
@@ -192,18 +192,14 @@ class GalaxyPro {
     setupInput() {
         const handle = (e) => {
             if(this.isWon) return;
-            const rect = this.canvas.getBoundingClientRect();
-            const clientX = e.clientX || (e.touches && e.touches[0].clientX);
-            const clientY = e.clientY || (e.touches && e.touches[0].clientY);
-            const x = clientX - rect.left;
-            const y = clientY - rect.top;
-            
+            const x = e.clientX || (e.touches && e.touches[0].clientX);
+            const y = e.clientY || (e.touches && e.touches[0].clientY);
             this.nodes.forEach(n => {
-                if(Math.hypot(n.x - x, n.y - y) < 35) this.selectNode(n.id);
+                if(Math.hypot(n.x - x, n.y - y) < 40) this.selectNode(n.id);
             });
         };
-        this.canvas.addEventListener('mousedown', handle);
-        this.canvas.addEventListener('touchstart', handle);
+        window.addEventListener('mousedown', handle);
+        window.addEventListener('touchstart', handle);
     }
 
     selectNode(id) {
@@ -224,52 +220,58 @@ class GalaxyPro {
 
     win() {
         this.isWon = true;
-        document.getElementById('win-meta').innerText = `LEVEL ${this.level} COMPLETED IN ${document.getElementById('timer').innerText}`;
-        setTimeout(() => {
-            document.getElementById('win-screen').style.display = 'flex';
-        }, 500);
+        document.getElementById('result-text').innerText = `Bạn đã chinh phục Level ${this.level}!`;
+        setTimeout(() => document.getElementById('win-modal').style.display = 'flex', 600);
     }
 
     nextLevel() { this.level++; document.getElementById('lvl').innerText = this.level; this.generateLevel(); }
     undo() { this.path.pop(); }
     restart() { this.path = []; this.startTime = Date.now(); }
 
-    draw() {
-        const {ctx, canvas} = this;
-        const w = window.innerWidth;
-        const h = window.innerHeight;
-
-        // 1. Background (Gradient mượt)
-        const grad = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, w);
-        grad.addColorStop(0, '#0a0a25');
-        grad.addColorStop(1, '#02020a');
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, w, h);
-
-        // 2. Draw Edges (Cạnh có thể đi - Nổi bật hơn)
-        ctx.setLineDash([]);
-        this.edges.forEach(e => {
-            const n1 = this.nodes[e[0]], n2 = this.nodes[e[1]];
-            ctx.strokeStyle = 'rgba(0, 242, 255, 0.25)'; // Màu Neon nhạt rõ hơn
-            ctx.lineWidth = 1.5;
-            ctx.beginPath();
-            ctx.moveTo(n1.x, n1.y);
-            ctx.lineTo(n2.x, n2.y);
-            ctx.stroke();
-            
-            // Điểm nhấn ở giữa cạnh để tạo chiều sâu
-            ctx.fillStyle = 'rgba(255,255,255,0.05)';
-            ctx.beginPath();
-            ctx.arc((n1.x+n2.x)/2, (n1.y+n2.y)/2, 1, 0, Math.PI*2);
-            ctx.fill();
+    update() {
+        // Floating effect cho nodes
+        this.nodes.forEach(n => {
+            n.x = n.baseX + Math.cos(Date.now() * 0.002 + n.phase) * 10;
+            n.y = n.baseY + Math.sin(Date.now() * 0.002 + n.phase) * 10;
         });
 
-        // 3. Draw Active Path (Rực rỡ)
+        // Di chuyển mây
+        this.clouds.forEach(c => {
+            c.x += c.v;
+            if(c.x - c.r > window.innerWidth) c.x = -c.r;
+        });
+    }
+
+    draw() {
+        const {ctx, canvas} = this;
+        ctx.clearRect(0,0, canvas.width, canvas.height);
+
+        // 1. Draw Clouds (Hiệu ứng tinh vân mờ ảo như trong ảnh)
+        this.clouds.forEach(c => {
+            const grad = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, c.r);
+            grad.addColorStop(0, `rgba(255, 255, 255, ${c.opacity})`);
+            grad.addColorStop(1, 'transparent');
+            ctx.fillStyle = grad;
+            ctx.beginPath(); ctx.arc(c.x, c.y, c.r, 0, Math.PI*2); ctx.fill();
+        });
+
+        // 2. Draw Potential Edges (Đường kẻ nổi bật rực rỡ)
+        ctx.lineWidth = 2.5;
+        this.edges.forEach(e => {
+            const n1 = this.nodes[e[0]], n2 = this.nodes[e[1]];
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.shadowBlur = 10; ctx.shadowColor = 'white';
+            ctx.beginPath(); ctx.moveTo(n1.x, n1.y); ctx.lineTo(n2.x, n2.y); ctx.stroke();
+        });
+        ctx.shadowBlur = 0;
+
+        // 3. Draw Active Path (Rainbow / Dreamy Line)
         if(this.path.length > 1) {
-            ctx.shadowBlur = 15;
-            ctx.shadowColor = '#00f2ff';
-            ctx.strokeStyle = '#00f2ff';
-            ctx.lineWidth = 4;
+            ctx.lineWidth = 6;
+            ctx.lineCap = 'round';
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = '#fff';
+            ctx.strokeStyle = 'white';
             ctx.beginPath();
             this.path.forEach((id, i) => {
                 const n = this.nodes[id];
@@ -280,49 +282,46 @@ class GalaxyPro {
             ctx.shadowBlur = 0;
         }
 
-        // 4. Draw Nodes (Glassmorphism)
+        // 4. Draw Nodes (Ngôi sao phát sáng)
         this.nodes.forEach(n => {
             const active = this.path.includes(n.id);
             const last = this.path[this.path.length-1] === n.id;
             
-            // Aura xung quanh
-            if(active) {
-                const pulse = Math.sin(Date.now()*0.005)*5;
-                ctx.fillStyle = 'rgba(0, 242, 255, 0.1)';
-                ctx.beginPath();
-                ctx.arc(n.x, n.y, 20 + pulse, 0, Math.PI*2);
-                ctx.fill();
-            }
-
+            ctx.save();
+            ctx.shadowBlur = active ? 25 : 5;
+            ctx.shadowColor = 'white';
+            ctx.fillStyle = active ? '#fff' : 'rgba(255,255,255,0.4)';
+            
             ctx.beginPath();
-            ctx.arc(n.x, n.y, last ? 10 : 7, 0, Math.PI*2);
-            ctx.fillStyle = active ? '#00f2ff' : '#fff';
+            ctx.arc(n.x, n.y, last ? 14 : 10, 0, Math.PI*2);
             ctx.fill();
             
-            if(!active) {
-                ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-                ctx.lineWidth = 1;
+            if(last) {
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 2;
                 ctx.beginPath();
-                ctx.arc(n.x, n.y, 12, 0, Math.PI*2);
+                ctx.arc(n.x, n.y, 22 + Math.sin(Date.now()*0.01)*5, 0, Math.PI*2);
                 ctx.stroke();
             }
+            ctx.restore();
         });
 
-        // Timer update
+        // Timer
         if(!this.isWon) {
-            const sec = Math.floor((Date.now() - this.startTime)/1000);
-            document.getElementById('timer').innerText = 
-                `${Math.floor(sec/60).toString().padStart(2,'0')}:${(sec%60).toString().padStart(2,'0')}`;
+            const s = Math.floor((Date.now()-this.startTime)/1000);
+            document.getElementById('time').innerText = 
+                `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
         }
     }
 
     animate() {
+        this.update();
         this.draw();
         requestAnimationFrame(() => this.animate());
     }
 }
 
-const game = new GalaxyPro();
+const game = new DreamyGalaxy();
 </script>
 </body>
 </html>
