@@ -8,37 +8,48 @@
         /* ==========================================================================
            CSS BIẾN & CÀI ĐẶT CHUNG
            ========================================================================== */
-        :root {
-            --bg-color: #0d1117;
-            --primary-color: #f1c40f;
-            --secondary-color: #e67e22;
-            --accent-color: #3498db;
-            --text-color: #ffffff;
-            --glass-bg: rgba(20, 25, 35, 0.85);
-            --glass-border: rgba(255, 255, 255, 0.1);
-            --z-bg: 1;
-            --z-game: 2;
-            --z-fx: 3;
-            --z-ui: 100;
-            --z-modal: 1000;
-        }
+        /* Import font chữ hỗ trợ tiếng Việt tốt nhất từ Google */
+@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@400;700&display=swap');
 
-        * {
-            box-sizing: border-box;
-            user-select: none;
-            -webkit-user-select: none;
-        }
+:root {
+    --bg-color: #0d1117;
+    --primary-color: #f1c40f;
+    --secondary-color: #e67e22;
+    --accent-color: #3498db;
+    --text-color: #ffffff;
+    --glass-bg: rgba(20, 25, 35, 0.85);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --z-bg: 1;
+    --z-game: 2;
+    --z-fx: 3;
+    --z-ui: 100;
+    --z-modal: 1000;
+    /* Font chữ chính cho toàn bộ Game */
+    --font-main: 'Lexend', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
 
-        body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            background-color: var(--bg-color);
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            overflow: hidden;
-            touch-action: none; /* Vô hiệu hóa cuộn trang trên mobile */
-        }
+* {
+    box-sizing: border-box;
+    user-select: none;
+    -webkit-user-select: none;
+    /* Áp dụng font cho tất cả các thành phần con */
+    font-family: var(--font-main);
+}
+
+body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--bg-color);
+    overflow: hidden;
+    touch-action: none;
+}
+
+/* Đảm bảo các ô nhập liệu và nút bấm cũng ăn theo font này */
+input, button, select, textarea {
+    font-family: var(--font-main);
+}
 
         /* ==========================================================================
            HỆ THỐNG CANVAS
@@ -1141,11 +1152,15 @@ GameApp.Engine = class {
             this.ctx.stroke();
 
             // Nếu là điểm hiện tại, vẽ Avatar của người chơi lên đó
-            if (isCurrent) {
-                this.ctx.font = "35px Arial";
-                this.ctx.textAlign = "center";
-                this.ctx.textBaseline = "middle";
-                this.ctx.fillText(this.playerProfile.avatar, n.x, n.y - 40); // Nổi lên trên node 1 chút
+            // --- ĐOẠN MỚI ĐÃ SỬA ---
+if (isCurrent) {
+    // Sử dụng bộ font hỗ trợ Emoji đầy đủ để không bị lỗi ô vuông
+    this.ctx.font = "40px 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif";
+    this.ctx.textAlign = "center";
+    this.ctx.textBaseline = "middle";
+    // Đẩy avatar lên cao hơn một chút (y - 45) để không đè vào điểm nối
+    this.ctx.fillText(this.playerProfile.avatar, n.x, n.y - 45); 
+}
             }
         });
     }
