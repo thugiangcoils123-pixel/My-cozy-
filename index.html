@@ -1,382 +1,409 @@
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
-<meta charset="UTF-8">
-<title>Hamilton Game</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hamilton Cosmic Adventure | Pro Version</title>
+    <style>
+        :root {
+            --primary: #8a2be2;
+            --secondary: #00f2ff;
+            --bg: #050510;
+            --surface: rgba(255, 255, 255, 0.08);
+            --glow: 0 0 15px rgba(138, 43, 226, 0.5);
+        }
 
-<style>
-body{
-  margin:0;
-  font-family:sans-serif;
-  background:radial-gradient(circle,#0b0b2a,#000);
-  color:white;
-}
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: var(--bg);
+            color: white;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            user-select: none;
+        }
 
-/* LAYOUT */
-.container{
-  max-width:700px;
-  margin:auto;
-  padding:10px;
-}
+        /* GUI Layer */
+        .gui-overlay {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            width: 90%;
+            max-width: 800px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            pointer-events: none;
+        }
 
-h1{
-  text-align:center;
-  color:#caa6ff;
-  text-shadow:0 0 20px #caa6ff;
-}
+        .stats-card {
+            background: var(--surface);
+            backdrop-filter: blur(15px);
+            padding: 10px 25px;
+            border-radius: 50px;
+            border: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            gap: 20px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            box-shadow: var(--glow);
+        }
 
-/* PANEL */
-.panel{
-  display:flex;
-  flex-wrap:wrap;
-  justify-content:center;
-  gap:10px;
-  margin-bottom:10px;
+        .controls {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            pointer-events: all;
+        }
 
-  backdrop-filter:blur(10px);
-  background:rgba(255,255,255,0.05);
-  border-radius:10px;
-  padding:10px;
-}
+        button {
+            background: var(--surface);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            backdrop-filter: blur(10px);
+            font-weight: 600;
+        }
 
-button{
-  padding:8px 12px;
-  border:none;
-  border-radius:8px;
-  background:linear-gradient(45deg,#caa6ff,#7a5cff);
-  color:white;
-  cursor:pointer;
-  transition:0.2s;
-}
-button:hover{
-  transform:scale(1.1);
-  box-shadow:0 0 10px #caa6ff;
-}
+        button:hover {
+            background: var(--primary);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
 
-/* CANVAS */
-.canvasWrap{
-  width:100%;
-  aspect-ratio:1/1;
-}
-canvas{
-  width:100%;
-  height:100%;
-  border-radius:12px;
-  background:black;
-  box-shadow:0 0 40px rgba(150,100,255,0.3);
-}
+        #game-canvas {
+            display: block;
+            cursor: crosshair;
+        }
 
-/* WIN */
-#winBox{
-  position:fixed;
-  inset:0;
-  display:none;
-  justify-content:center;
-  align-items:center;
-  background:rgba(0,0,0,0.7);
-}
-#winBox.show{display:flex;}
+        /* Win Modal */
+        #modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.85);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            animation: fadeIn 0.5s ease;
+        }
 
-.winContent{
-  background:#111;
-  padding:20px;
-  border-radius:12px;
-  text-align:center;
-  box-shadow:0 0 30px #caa6ff;
-}
-</style>
+        .modal-content {
+            text-align: center;
+            background: linear-gradient(145deg, #1a1a2e, #0a0a1a);
+            padding: 40px;
+            border-radius: 24px;
+            border: 2px solid var(--primary);
+            box-shadow: 0 0 50px rgba(138, 43, 226, 0.3);
+        }
+
+        h2 { font-size: 2.5rem; margin-top: 0; color: var(--secondary); }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
 </head>
-
 <body>
 
-<div class="container">
+    <div class="gui-overlay">
+        <div class="stats-card">
+            <div>LEVEL: <span id="lvl-val" style="color:var(--secondary)">1</span></div>
+            <div>TIME: <span id="time-val">00:00</span></div>
+        </div>
+    </div>
 
-<h1>🌙 Hamilton Game</h1>
+    <div class="controls">
+        <button onclick="game.undo()">UNDO</button>
+        <button onclick="game.restart()">RESTART</button>
+        <button onclick="game.autoSolve()">HINT</button>
+    </div>
 
-<div class="panel">
-Level: <span id="level">1</span>
-Time: <span id="time">0</span>s
-</div>
+    <canvas id="game-canvas"></canvas>
 
-<div class="panel">
-<button onclick="undo()">Undo</button>
-<button onclick="restart()">Restart</button>
-<button onclick="showAnswer()">Answer</button>
-</div>
-
-<div class="canvasWrap">
-<canvas id="game"></canvas>
-</div>
-
-</div>
-
-<div id="winBox">
-  <div class="winContent">
-    <h2>✨ You Win!</h2>
-    <p id="result"></p>
-    <button onclick="nextLevel()">Next Level</button>
-  </div>
-</div>
+    <div id="modal">
+        <div class="modal-content">
+            <h2>MISSION SUCCESS</h2>
+            <p id="win-msg" style="font-size: 1.2rem; margin-bottom: 30px;"></p>
+            <button onclick="game.nextLevel()" style="padding: 15px 40px; font-size: 1.1rem;">NEXT GALAXY</button>
+        </div>
+    </div>
 
 <script>
-const canvas=document.getElementById("game");
-const ctx=canvas.getContext("2d");
+/**
+ * ENGINE: Hamilton Cosmic Professional
+ * Author: AI Assistant (Pro Upgrade)
+ */
 
-/* RESPONSIVE */
-function resizeCanvas(){
-  const rect=canvas.getBoundingClientRect();
-  const ratio=window.devicePixelRatio||1;
-  canvas.width=rect.width*ratio;
-  canvas.height=rect.height*ratio;
-  ctx.setTransform(ratio,0,0,ratio,0,0);
-}
-window.addEventListener("resize",resizeCanvas);
-resizeCanvas();
+class GameEngine {
+    constructor() {
+        this.canvas = document.getElementById('game-canvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.level = 1;
+        this.nodes = [];
+        this.edges = [];
+        this.path = [];
+        this.solution = [];
+        this.isDragging = false;
+        this.isSolved = false;
+        this.startTime = Date.now();
+        
+        this.particles = Array.from({length: 50}, () => ({
+            x: Math.random(), y: Math.random(), r: Math.random() * 2, s: Math.random() * 0.001
+        }));
 
-/* GAME */
-let graph,path=[],level=1,dragging=false,showingAnswer=false;
-
-/* TIMER */
-let startTime,timer;
-function startTimer(){
-  startTime=Date.now();
-  clearInterval(timer);
-  timer=setInterval(()=>{
-    document.getElementById("time").innerText=
-      Math.floor((Date.now()-startTime)/1000);
-  },200);
-}
-
-/* STARS */
-let stars=[];
-for(let i=0;i<120;i++){
-  stars.push({x:Math.random(),y:Math.random(),a:Math.random()});
-}
-
-/* METEORS */
-let meteors=[];
-function spawnMeteor(){
-  meteors.push({
-    x:Math.random(),
-    y:0,
-    vx:0.5,
-    vy:0.5,
-    life:1
-  });
-}
-
-/* GRAPH */
-class Graph{
-  constructor(n){
-    this.nodes=[];
-    this.edges={};
-    this.solution=[];
-
-    let MIN=Math.max(0.15-level*0.005,0.08);
-
-    for(let i=0;i<n;i++){
-      let x,y,tries=0;
-      do{
-        x=0.1+Math.random()*0.8;
-        y=0.1+Math.random()*0.8;
-        tries++;
-      }while(!this.ok(x,y,MIN)&&tries<100);
-
-      this.nodes.push({
-        id:i,x,y,
-        color:`hsl(${Math.random()*360},100%,70%)`
-      });
-
-      this.edges[i]=[];
+        this.init();
+        this.animate();
     }
 
-    for(let i=0;i<n-1;i++){
-      this.link(i,i+1);
-      this.solution.push(i);
+    init() {
+        this.resize();
+        window.addEventListener('resize', () => this.resize());
+        this.setupInput();
+        this.generateLevel();
     }
-    this.solution.push(n-1);
 
-    let density=Math.max(0.3-level*0.02,0.05);
-
-    for(let i=0;i<n;i++){
-      for(let j=i+2;j<n;j++){
-        if(Math.random()<density) this.link(i,j);
-      }
+    resize() {
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
     }
-  }
 
-  ok(x,y,min){
-    return this.nodes.every(n=>{
-      return Math.hypot(n.x-x,n.y-y)>min;
-    });
-  }
+    setupInput() {
+        const handleDown = (e) => {
+            const pos = this.getPos(e);
+            const node = this.findNode(pos.x, pos.y);
+            if (node !== null) {
+                this.isDragging = true;
+                this.addToPath(node);
+            }
+        };
 
-  link(a,b){
-    this.edges[a].push(b);
-    this.edges[b].push(a);
-  }
+        const handleMove = (e) => {
+            if (!this.isDragging || this.isSolved) return;
+            const pos = this.getPos(e);
+            const node = this.findNode(pos.x, pos.y);
+            if (node !== null) this.addToPath(node);
+        };
 
-  isConnected(a,b){
-    return this.edges[a].includes(b);
-  }
-}
-
-/* DRAW */
-function draw(){
-  const w=canvas.clientWidth;
-  const h=canvas.clientHeight;
-
-  ctx.clearRect(0,0,w,h);
-
-  // stars
-  stars.forEach(s=>{
-    ctx.fillStyle=`rgba(255,255,255,${s.a})`;
-    ctx.fillRect(s.x*w,s.y*h,2,2);
-    s.a+=(Math.random()-0.5)*0.02;
-  });
-
-  // meteors
-  meteors.forEach(m=>{
-    ctx.strokeStyle="white";
-    ctx.beginPath();
-    ctx.moveTo(m.x*w,m.y*h);
-    ctx.lineTo((m.x-0.05)*w,(m.y-0.05)*h);
-    ctx.stroke();
-
-    m.x+=0.01;
-    m.y+=0.01;
-    m.life-=0.01;
-  });
-
-  meteors=meteors.filter(m=>m.life>0);
-  if(Math.random()<0.03) spawnMeteor();
-
-  // edges
-  for(let a in graph.edges){
-    for(let b of graph.edges[a]){
-      let A=graph.nodes[a],B=graph.nodes[b];
-      ctx.strokeStyle="rgba(255,255,255,0.1)";
-      ctx.beginPath();
-      ctx.moveTo(A.x*w,A.y*h);
-      ctx.lineTo(B.x*w,B.y*h);
-      ctx.stroke();
+        window.addEventListener('mousedown', handleDown);
+        window.addEventListener('mousemove', handleMove);
+        window.addEventListener('mouseup', () => this.isDragging = false);
+        window.addEventListener('touchstart', (e) => handleDown(e.touches[0]));
+        window.addEventListener('touchmove', (e) => handleMove(e.touches[0]));
+        window.addEventListener('touchend', () => this.isDragging = false);
     }
-  }
 
-  // path
-  ctx.lineWidth=4;
-  ctx.shadowBlur=20;
-
-  for(let i=0;i<path.length-1;i++){
-    let A=graph.nodes[path[i]];
-    let B=graph.nodes[path[i+1]];
-    ctx.strokeStyle=A.color;
-    ctx.shadowColor=A.color;
-
-    ctx.beginPath();
-    ctx.moveTo(A.x*w,A.y*h);
-    ctx.lineTo(B.x*w,B.y*h);
-    ctx.stroke();
-  }
-
-  ctx.shadowBlur=0;
-
-  // nodes
-  graph.nodes.forEach(n=>{
-    ctx.beginPath();
-    ctx.arc(n.x*w,n.y*h,10,0,Math.PI*2);
-
-    ctx.fillStyle=path.includes(n.id)?n.color:"#fff";
-    ctx.shadowBlur=10;
-    ctx.shadowColor=n.color;
-    ctx.fill();
-    ctx.shadowBlur=0;
-  });
-}
-
-/* LOOP */
-function loop(){
-  draw();
-  requestAnimationFrame(loop);
-}
-
-/* INPUT */
-function getNode(e){
-  let rect=canvas.getBoundingClientRect();
-  let x=(e.clientX-rect.left)/rect.width;
-  let y=(e.clientY-rect.top)/rect.height;
-
-  let nearest=null,min=0.05;
-  graph.nodes.forEach(n=>{
-    let d=Math.hypot(n.x-x,n.y-y);
-    if(d<min){min=d;nearest=n.id;}
-  });
-  return nearest;
-}
-
-canvas.onmousedown=()=>dragging=true;
-canvas.onmouseup=()=>dragging=false;
-
-canvas.onmousemove=e=>{
-  if(!dragging||showingAnswer) return;
-
-  let node=getNode(e);
-  if(node==null) return;
-
-  if(path.length==0||graph.isConnected(path[path.length-1],node)){
-    if(!path.includes(node)){
-      path.push(node);
-      if(path.length===graph.nodes.length) win();
+    getPos(e) {
+        return { x: e.clientX, y: e.clientY };
     }
-  }
-};
 
-/* ANSWER */
-function showAnswer(){
-  if(showingAnswer) return;
-  showingAnswer=true;
-  path=[];
-  let i=0;
+    generateLevel() {
+        this.isSolved = false;
+        this.path = [];
+        this.nodes = [];
+        this.edges = [];
+        this.startTime = Date.now();
+        document.getElementById('modal').style.display = 'none';
 
-  function step(){
-    if(i<graph.solution.length){
-      path.push(graph.solution[i]);
-      i++;
-      setTimeout(step,200);
-    }else showingAnswer=false;
-  }
-  step();
+        const nodeCount = 4 + this.level;
+        const padding = 100;
+        
+        // Tạo đường đi Hamilton trước để đảm bảo game giải được
+        let currentPos = { x: this.canvas.width/2, y: this.canvas.height/2 };
+        for(let i=0; i<nodeCount; i++) {
+            let x, y, isValid = false;
+            while(!isValid) {
+                x = padding + Math.random() * (this.canvas.width - padding*2);
+                y = padding + Math.random() * (this.canvas.height - padding*2);
+                isValid = this.nodes.every(n => Math.hypot(n.x - x, n.y - y) > 120);
+                if(isValid) {
+                    const node = { id: i, x, y, color: `hsl(${250 + Math.random()*60}, 80%, 70%)`, pulse: 0 };
+                    this.nodes.push(node);
+                }
+            }
+        }
+
+        // Tạo Solution Path
+        this.solution = this.nodes.map(n => n.id);
+        // Shuffle các điểm để người chơi không nhìn ra quy luật ngay
+        for (let i = this.nodes.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [this.nodes[i].x, this.nodes[j].x] = [this.nodes[j].x, this.nodes[i].x];
+            [this.nodes[i].y, this.nodes[j].y] = [this.nodes[j].y, this.nodes[i].y];
+        }
+
+        // Thêm các cạnh (edges) - Đảm bảo bao gồm cả solution
+        for(let i=0; i<nodeCount; i++) {
+            this.addEdge(this.solution[i], this.solution[(i+1)%nodeCount]); // Path chính
+        }
+        
+        // Thêm cạnh nhiễu (fake edges)
+        const fakeEdgesCount = this.level * 2;
+        for(let i=0; i<fakeEdgesCount; i++) {
+            const a = Math.floor(Math.random() * nodeCount);
+            const b = Math.floor(Math.random() * nodeCount);
+            if(a !== b) this.addEdge(a, b);
+        }
+    }
+
+    addEdge(a, b) {
+        if(!this.edges.some(e => (e[0]===a && e[1]===b) || (e[0]===b && e[1]===a))) {
+            this.edges.push([a, b]);
+        }
+    }
+
+    findNode(x, y) {
+        for(let n of this.nodes) {
+            if(Math.hypot(n.x - x, n.y - y) < 30) return n.id;
+        }
+        return null;
+    }
+
+    addToPath(nodeId) {
+        if (this.path.includes(nodeId)) {
+            // Cho phép lùi lại điểm trước đó (Undo nhanh)
+            if(this.path[this.path.length-2] === nodeId) this.path.pop();
+            return;
+        }
+
+        if (this.path.length === 0) {
+            this.path.push(nodeId);
+        } else {
+            const lastNode = this.path[this.path.length - 1];
+            if (this.edges.some(e => (e[0]===lastNode && e[1]===nodeId) || (e[0]===nodeId && e[1]===lastNode))) {
+                this.path.push(nodeId);
+                if (this.path.length === this.nodes.length) this.triggerWin();
+            }
+        }
+    }
+
+    triggerWin() {
+        this.isSolved = true;
+        const finalTime = document.getElementById('time-val').innerText;
+        document.getElementById('win-msg').innerText = `You conquered level ${this.level} in ${finalTime}!`;
+        document.getElementById('modal').style.display = 'flex';
+    }
+
+    nextLevel() {
+        this.level++;
+        document.getElementById('lvl-val').innerText = this.level;
+        this.generateLevel();
+    }
+
+    undo() { this.path.pop(); }
+    restart() { this.path = []; this.startTime = Date.now(); }
+
+    autoSolve() {
+        this.path = [];
+        let i = 0;
+        const interval = setInterval(() => {
+            if (i >= this.solution.length) {
+                clearInterval(interval);
+                this.triggerWin();
+            } else {
+                this.path.push(this.solution[i]);
+                i++;
+            }
+        }, 300);
+    }
+
+    updateTimer() {
+        if(this.isSolved) return;
+        const elapsed = Math.floor((Date.now() - this.startTime) / 1000);
+        const m = Math.floor(elapsed / 60).toString().padStart(2, '0');
+        const s = (elapsed % 60).toString().padStart(2, '0');
+        document.getElementById('time-val').innerText = `${m}:${s}`;
+    }
+
+    draw() {
+        const { ctx, canvas, nodes, edges, path } = this;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // 1. Background Particles
+        ctx.fillStyle = "rgba(255,255,255,0.3)";
+        this.particles.forEach(p => {
+            p.y -= p.s * canvas.height;
+            if(p.y < 0) p.y = 1;
+            ctx.beginPath();
+            ctx.arc(p.x * canvas.width, p.y * canvas.height, p.r, 0, Math.PI*2);
+            ctx.fill();
+        });
+
+        // 2. Draw Connections (Background)
+        ctx.lineWidth = 2;
+        edges.forEach(e => {
+            const n1 = nodes[e[0]];
+            const n2 = nodes[e[1]];
+            ctx.strokeStyle = "rgba(255,255,255,0.05)";
+            ctx.beginPath();
+            ctx.moveTo(n1.x, n1.y);
+            ctx.lineTo(n2.x, n2.y);
+            ctx.stroke();
+        });
+
+        // 3. Draw Active Path (Glow effect)
+        if (path.length > 1) {
+            ctx.save();
+            ctx.shadowBlur = 15;
+            ctx.lineWidth = 4;
+            for (let i = 0; i < path.length - 1; i++) {
+                const n1 = nodes[path[i]];
+                const n2 = nodes[path[i+1]];
+                ctx.shadowColor = n1.color;
+                ctx.strokeStyle = n1.color;
+                ctx.beginPath();
+                ctx.moveTo(n1.x, n1.y);
+                ctx.lineTo(n2.x, n2.y);
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        // 4. Draw Nodes
+        nodes.forEach(n => {
+            const isActive = path.includes(n.id);
+            const isLast = path[path.length-1] === n.id;
+            
+            ctx.save();
+            if(isActive) {
+                ctx.shadowBlur = isLast ? 30 : 15;
+                ctx.shadowColor = n.color;
+                ctx.fillStyle = n.color;
+            } else {
+                ctx.fillStyle = "rgba(255,255,255,0.2)";
+            }
+
+            ctx.beginPath();
+            ctx.arc(n.x, n.y, isLast ? 15 : 10, 0, Math.PI*2);
+            ctx.fill();
+            
+            // Outer ring for last node
+            if(isLast) {
+                ctx.strokeStyle = "white";
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(n.x, n.y, 22 + Math.sin(Date.now()/200)*5, 0, Math.PI*2);
+                ctx.stroke();
+            }
+            ctx.restore();
+        });
+    }
+
+    animate() {
+        this.updateTimer();
+        this.draw();
+        requestAnimationFrame(() => this.animate());
+    }
 }
 
-/* WIN */
-function win(){
-  clearInterval(timer);
-  let t=Math.floor((Date.now()-startTime)/1000);
-
-  document.getElementById("result").innerText="Time: "+t+"s";
-  document.getElementById("winBox").classList.add("show");
-}
-
-/* SYSTEM */
-function nextLevel(){
-  document.getElementById("winBox").classList.remove("show");
-  level++;
-  start();
-}
-
-function undo(){ path.pop(); }
-function restart(){ path=[]; startTimer(); }
-
-function start(){
-  document.getElementById("level").innerText=level;
-  graph=new Graph(4+level);
-  path=[];
-  startTimer();
-}
-
-start();
-loop();
+// Khởi tạo game khi trang load xong
+const game = new GameEngine();
 </script>
-
 </body>
 </html>
