@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Starry Hamilton - Neon Confetti</title>
+    <title>Starry Hamilton - Avatar Journey</title>
     <style>
         :root {
             --bg: #fff9e1; --primary: #f1c40f; --accent: #e67e22; --text: #5d4037;
@@ -17,9 +17,9 @@
         canvas { position: absolute; inset: 0; display: block; }
         #bg-canvas { z-index: -1; }
         #game-canvas { z-index: 1; }
-        #confetti-canvas { z-index: 2500; pointer-events: none; }
+        #fx-canvas { z-index: 2; pointer-events: none; }
 
-        /* --- UI Screens --- */
+        /* UI Screens */
         .screen {
             position: fixed; inset: 0; z-index: 3000;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
@@ -32,15 +32,7 @@
             box-shadow: 8px 8px 0px var(--accent); width: 90%; max-width: 400px;
         }
 
-        /* --- Leaderboard Popup --- */
-        #lb-popup {
-            position: fixed; inset: 0; z-index: 4000;
-            background: rgba(0,0,0,0.5); display: none;
-            justify-content: center; align-items: center; backdrop-filter: blur(5px);
-        }
-        #lb-popup.active { display: flex; }
-
-        /* --- Top Bar (Dọn sạch không gian) --- */
+        /* Top Bar */
         .top-bar {
             position: fixed; top: 15px; width: 100%; display: flex;
             justify-content: space-around; align-items: center; pointer-events: none; z-index: 1000;
@@ -51,7 +43,7 @@
             box-shadow: 4px 4px 0 var(--accent); font-size: 0.9rem; cursor: pointer;
         }
 
-        /* --- Bottom Bar --- */
+        /* Bottom Bar */
         .bottom-bar {
             position: fixed; bottom: 20px; width: 100%; display: flex;
             justify-content: center; gap: 10px; z-index: 1000;
@@ -64,127 +56,128 @@
         }
         button:active { transform: translateY(3px); box-shadow: none; }
 
-        input {
-            width: 80%; padding: 12px; border-radius: 15px; border: 3px solid var(--primary);
-            margin: 15px 0; font-size: 1rem; text-align: center; outline: none;
+        .avatar-select { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 20px 0; }
+        .ava-opt { font-size: 2rem; cursor: pointer; padding: 5px; border-radius: 10px; border: 2px solid transparent; }
+        .ava-opt.selected { border-color: var(--accent); background: #fffde7; }
+        
+        #lb-popup {
+            position: fixed; inset: 0; z-index: 4000;
+            background: rgba(0,0,0,0.5); display: none;
+            justify-content: center; align-items: center; backdrop-filter: blur(5px);
         }
+        #lb-popup.active { display: flex; }
     </style>
 </head>
 <body>
 
     <canvas id="bg-canvas"></canvas>
     <canvas id="game-canvas"></canvas>
-    <canvas id="confetti-canvas"></canvas>
+    <canvas id="fx-canvas"></canvas>
 
-    <!-- Start Screen -->
+    <!-- Chọn Avatar & Tên -->
     <div id="start-screen" class="screen">
         <div class="glass-box">
-            <h2 style="color: var(--accent);">Starry Hamilton</h2>
-            <p>Nối tất cả các điểm mà không lặp lại đường đi.</p>
-            <input type="text" id="user-name" placeholder="Tên của bạn..." maxlength="12">
-            <button onclick="game.start()">BẮT ĐẦU</button>
+            <h2 style="color: var(--accent);">Chọn Người Bạn Đồng Hành</h2>
+            <div class="avatar-select" id="avatar-list"></div>
+            <input type="text" id="user-name" placeholder="Tên của bạn..." maxlength="10" 
+                   style="width:80%; padding:12px; border-radius:15px; border:3px solid var(--primary); text-align:center; margin-bottom:15px;">
+            <button onclick="game.start()">KHÁM PHÁ NGAY</button>
         </div>
     </div>
 
-    <!-- Top UI -->
+    <!-- UI -->
     <div class="top-bar">
         <div class="ui-pill">LV: <span id="lvl">1</span></div>
         <div class="ui-pill" onclick="UI.toggleLB()">🏆 XẾP HẠNG</div>
         <div class="ui-pill">⏱️ <span id="timer">0</span>s</div>
     </div>
 
-    <!-- Leaderboard -->
-    <div id="lb-popup" onclick="UI.toggleLB()">
-        <div class="glass-box" onclick="event.stopPropagation()">
-            <h3 style="margin: 0 0 15px 0;">🏆 TOP CAO THỦ</h3>
-            <div id="lb-content" style="max-height: 200px; overflow-y: auto; text-align: left; margin-bottom: 15px;"></div>
-            <button onclick="UI.toggleLB()" style="width: 100%;">ĐÓNG</button>
-        </div>
-    </div>
-
-    <!-- Bottom Controls -->
     <div class="bottom-bar">
         <button onclick="game.undo()" style="background:#95a5a6; box-shadow: 0 4px 0 #7f8c8d;">Hoàn tác</button>
         <button onclick="game.toggleHint()" id="hint-btn" style="background:#3498db; box-shadow: 0 4px 0 #2980b9;">Gợi ý</button>
         <button onclick="game.resetLevel()" style="background:#e67e22;">Chơi lại</button>
     </div>
 
+    <!-- Leaderboard -->
+    <div id="lb-popup" onclick="UI.toggleLB()">
+        <div class="glass-box" onclick="event.stopPropagation()">
+            <h3 style="margin: 0 0 15px 0;">🏆 TOP THÁM HIỂM</h3>
+            <div id="lb-content" style="max-height: 250px; overflow-y: auto; text-align: left; margin-bottom: 15px;"></div>
+            <button onclick="UI.toggleLB()" style="width: 100%;">ĐÓNG</button>
+        </div>
+    </div>
+
     <!-- Win Screen -->
     <div id="win-screen" class="screen" style="display: none;">
         <div class="glass-box">
-            <h1 style="color: var(--accent); margin: 0;">XUẤT SẮC! 🎉</h1>
+            <h1 style="color: var(--accent); margin: 0;">THÀNH CÔNG! 🎉</h1>
             <p id="win-msg" style="font-size: 1.2rem; margin: 20px 0;"></p>
             <button onclick="game.nextLevel()">MÀN TIẾP THEO</button>
         </div>
     </div>
 
 <script>
-/**
- * ÂM THANH HIỆU ỨNG THẮNG
- */
 const Sound = {
     ctx: new (window.AudioContext || window.webkitAudioContext)(),
     playWin() {
-        // Hợp âm thắng cuộc (C Major: C4, E4, G4, C5)
-        const notes = [261.63, 329.63, 392.00, 523.25];
+        const notes = [392.00, 440.00, 493.88, 523.25, 659.25]; // G4, A4, B4, C5, E5
         notes.forEach((f, i) => {
             const o = this.ctx.createOscillator();
             const g = this.ctx.createGain();
-            o.type = 'triangle';
-            o.connect(g); g.connect(this.ctx.destination);
-            o.frequency.setValueAtTime(f, this.ctx.currentTime + i * 0.1);
-            g.gain.setValueAtTime(0.3, this.ctx.currentTime + i * 0.1);
-            g.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + i * 0.1 + 0.8);
-            o.start(this.ctx.currentTime + i * 0.1);
-            o.stop(this.ctx.currentTime + i * 0.1 + 1);
+            o.type = 'sine'; o.connect(g); g.connect(this.ctx.destination);
+            o.frequency.setValueAtTime(f, this.ctx.currentTime + i * 0.12);
+            g.gain.setValueAtTime(0.3, this.ctx.currentTime + i * 0.12);
+            g.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + i * 0.12 + 0.8);
+            o.start(this.ctx.currentTime + i * 0.12); o.stop(this.ctx.currentTime + i * 0.12 + 1);
         });
     }
 };
 
-/**
- * HIỆU ỨNG PHÁO HOA
- */
-class Confetti {
+class FX {
     constructor() {
-        this.canvas = document.getElementById('confetti-canvas');
+        this.canvas = document.getElementById('fx-canvas');
         this.ctx = this.canvas.getContext('2d');
         this.particles = [];
-        this.active = false;
-        window.addEventListener('resize', () => {
-            this.canvas.width = innerWidth; this.canvas.height = innerHeight;
-        });
+        window.addEventListener('resize', () => { this.canvas.width = innerWidth; this.canvas.height = innerHeight; });
         this.canvas.width = innerWidth; this.canvas.height = innerHeight;
     }
-    spawn() {
-        this.active = true;
-        this.particles = [];
-        for(let i=0; i<100; i++) {
+    confetti() {
+        for(let i=0; i<80; i++) {
             this.particles.push({
                 x: innerWidth/2, y: innerHeight/2,
-                v: { x: (Math.random()-0.5)*15, y: (Math.random()-0.5)*15 },
-                s: Math.random()*10 + 5,
-                c: `hsl(${Math.random()*360}, 100%, 50%)`,
-                a: 1
+                v: { x: (Math.random()-0.5)*20, y: (Math.random()-0.5)*20 },
+                s: Math.random()*8 + 4, c: `hsl(${Math.random()*360}, 80%, 60%)`, a: 1
             });
         }
     }
     update() {
-        if(!this.active) return;
-        this.ctx.clearRect(0, 0, innerWidth, innerHeight);
+        this.ctx.clearRect(0,0,innerWidth, innerHeight);
         this.particles.forEach((p, i) => {
-            p.x += p.v.x; p.y += p.v.y; p.v.y += 0.2; // Trọng lực
-            p.a -= 0.01;
-            this.ctx.globalAlpha = p.a;
+            p.x += p.v.x; p.y += p.v.y; p.v.y += 0.2; p.a -= 0.015;
+            this.ctx.globalAlpha = Math.max(0, p.a);
             this.ctx.fillStyle = p.c;
             this.ctx.fillRect(p.x, p.y, p.s, p.s);
             if(p.a <= 0) this.particles.splice(i, 1);
         });
-        if(this.particles.length === 0) this.active = false;
     }
 }
 
 const UI = {
-    toggleLB() { document.getElementById('lb-popup').classList.toggle('active'); }
+    toggleLB() { document.getElementById('lb-popup').classList.toggle('active'); },
+    initAvatars() {
+        const list = document.getElementById('avatar-list');
+        const avas = ['🐱','🐶','🦊','🐼','🦁','🐸','🐥','🐙'];
+        avas.forEach(a => {
+            const d = document.createElement('div');
+            d.className = 'ava-opt'; d.innerText = a;
+            if(a === '🐱') d.classList.add('selected');
+            d.onclick = () => {
+                document.querySelectorAll('.ava-opt').forEach(el => el.classList.remove('selected'));
+                d.classList.add('selected'); game.userAvatar = a;
+            };
+            list.appendChild(d);
+        });
+    }
 };
 
 class HamiltonGame {
@@ -193,15 +186,17 @@ class HamiltonGame {
         this.ctx = this.canvas.getContext('2d');
         this.bgCanvas = document.getElementById('bg-canvas');
         this.bgCtx = this.bgCanvas.getContext('2d');
-        this.confetti = new Confetti();
+        this.fx = new FX();
         
         this.level = 1; this.nodes = []; this.edges = []; this.path = []; this.solution = [];
         this.isWon = false; this.isHinting = false; this.startTime = 0;
-        this.records = JSON.parse(localStorage.getItem('hamilton_pro_v6')) || [];
+        this.userAvatar = '🐱'; this.userName = '';
+        this.records = JSON.parse(localStorage.getItem('hamilton_v7')) || [];
 
         window.addEventListener('resize', () => this.resize());
         this.resize();
         this.addListeners();
+        UI.initAvatars();
         this.loop();
     }
 
@@ -222,7 +217,7 @@ class HamiltonGame {
     }
 
     start() {
-        this.userName = document.getElementById('user-name').value || "Ẩn danh";
+        this.userName = document.getElementById('user-name').value || "Thám hiểm";
         document.getElementById('start-screen').style.display = 'none';
         this.generate();
     }
@@ -234,14 +229,14 @@ class HamiltonGame {
         document.getElementById('win-screen').style.display = 'none';
 
         const count = this.level + 3;
-        const margin = 80;
+        const margin = 100;
 
         for(let i=0; i<count; i++) {
             let x, y, tooClose;
             do {
                 x = margin + Math.random() * (innerWidth - margin*2);
-                y = 120 + Math.random() * (innerHeight - 250);
-                tooClose = this.nodes.some(n => Math.hypot(n.x - x, n.y - y) < 120);
+                y = 150 + Math.random() * (innerHeight - 300);
+                tooClose = this.nodes.some(n => Math.hypot(n.x - x, n.y - y) < 130);
             } while(tooClose);
             this.nodes.push({id: i, x, y});
         }
@@ -258,7 +253,7 @@ class HamiltonGame {
 
     checkClick(ix, iy) {
         this.nodes.forEach(n => {
-            if(Math.hypot(n.x - ix, n.y - iy) < 40) {
+            if(Math.hypot(n.x - ix, n.y - iy) < 45) {
                 const last = this.path[this.path.length-1];
                 if(this.path.includes(n.id)) {
                     if(last === n.id) this.path.pop();
@@ -273,21 +268,22 @@ class HamiltonGame {
     win() {
         this.isWon = true;
         const time = Math.floor((Date.now() - this.startTime)/1000);
-        Sound.playWin();
-        this.confetti.spawn();
+        Sound.playWin(); this.fx.confetti();
         
-        this.records.push({name: this.userName, time, level: this.level});
+        this.records.push({name: this.userName, ava: this.userAvatar, time, level: this.level});
         this.records.sort((a,b) => b.level - a.level || a.time - b.time);
-        localStorage.setItem('hamilton_pro_v6', JSON.stringify(this.records.slice(0, 10)));
+        localStorage.setItem('hamilton_v7', JSON.stringify(this.records.slice(0, 10)));
         
-        document.getElementById('win-msg').innerText = `Màn ${this.level} trong ${time}s!`;
+        document.getElementById('win-msg').innerText = `Cùng ${this.userAvatar} vượt màn ${this.level} trong ${time}s!`;
         document.getElementById('win-screen').style.display = 'flex';
         this.updateLB();
     }
 
     updateLB() {
         const content = document.getElementById('lb-content');
-        content.innerHTML = this.records.map((r, i) => `<div>${i+1}. ${r.name} - LV${r.level} (${r.time}s)</div>`).join('');
+        content.innerHTML = this.records.map((r, i) => 
+            `<div style="margin-bottom:8px;">${i+1}. ${r.ava} ${r.name} - LV${r.level} (${r.time}s)</div>`
+        ).join('');
     }
 
     toggleHint() { this.isHinting = !this.isHinting; }
@@ -296,16 +292,14 @@ class HamiltonGame {
     nextLevel() { this.level++; this.generate(); }
 
     loop() {
-        this.bgCtx.clearRect(0, 0, innerWidth, innerHeight);
-        this.ctx.clearRect(0, 0, innerWidth, innerHeight);
+        this.bgCtx.clearRect(0,0,innerWidth, innerHeight);
+        this.ctx.clearRect(0,0,innerWidth, innerHeight);
         
         // Vẽ cạnh mờ
-        this.ctx.strokeStyle = 'rgba(120, 120, 120, 0.2)'; this.ctx.lineWidth = 2;
+        this.ctx.strokeStyle = 'rgba(120, 120, 120, 0.15)'; this.ctx.lineWidth = 2;
         this.edges.forEach(e => {
-            this.ctx.beginPath();
-            this.ctx.moveTo(this.nodes[e[0]].x, this.nodes[e[0]].y);
-            this.ctx.lineTo(this.nodes[e[1]].x, this.nodes[e[1]].y);
-            this.ctx.stroke();
+            this.ctx.beginPath(); this.ctx.moveTo(this.nodes[e[0]].x, this.nodes[e[0]].y);
+            this.ctx.lineTo(this.nodes[e[1]].x, this.nodes[e[1]].y); this.ctx.stroke();
         });
 
         // Vẽ đường đi
@@ -319,18 +313,25 @@ class HamiltonGame {
             this.ctx.stroke();
         }
 
-        // Vẽ các trạm (ngôi sao)
+        // Vẽ các trạm & Avatar
         this.nodes.forEach(n => {
             const active = this.path.includes(n.id);
+            const isCurrent = this.path[this.path.length-1] === n.id;
+            
             this.ctx.fillStyle = active ? '#f1c40f' : '#fff';
             this.ctx.strokeStyle = '#e67e22'; this.ctx.lineWidth = 3;
-            this.ctx.beginPath();
-            this.ctx.arc(n.x, n.y, 20, 0, Math.PI*2);
+            this.ctx.beginPath(); this.ctx.arc(n.x, n.y, 22, 0, Math.PI*2);
             this.ctx.fill(); this.ctx.stroke();
+
+            // Hiện Avatar tại điểm hiện tại
+            if(isCurrent) {
+                this.ctx.font = "30px Arial";
+                this.ctx.fillText(this.userAvatar, n.x - 15, n.y - 30);
+            }
         });
 
-        if(!this.isWon) document.getElementById('timer').innerText = Math.floor((Date.now() - this.startTime)/1000);
-        this.confetti.update();
+        if(!this.isWon && this.startTime > 0) document.getElementById('timer').innerText = Math.floor((Date.now() - this.startTime)/1000);
+        this.fx.update();
         requestAnimationFrame(() => this.loop());
     }
 }
