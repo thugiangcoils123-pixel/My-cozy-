@@ -3,598 +3,1180 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Starry Hamilton - Premium Edition</title>
-    <!-- Google Fonts hỗ trợ tiếng Việt hoàn hảo -->
-    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <title>Starry Hamilton - Super Pro Edition</title>
     <style>
-        :root {
-            --gold-primary: #f1c40f;
-            --gold-light: #f39c12;
-            --gold-glow: rgba(241, 196, 15, 0.5);
-            --dark-bg: #0a0e14;
-            --glass: rgba(255, 255, 255, 0.05);
-            --glass-border: rgba(255, 255, 255, 0.1);
-            --font-main: 'Lexend', sans-serif;
-            --emoji-font: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+        /* ==========================================================================
+           CSS BIẾN & CÀI ĐẶT CHUNG
+           ========================================================================== */
+        /* Copy và dán đè đoạn này vào phần đầu của thẻ <style> */
+@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@400;700&display=swap');
+
+:root {
+    --bg-color: #0d1117;
+    --primary-color: #f1c40f;
+    --secondary-color: #e67e22;
+    --accent-color: #3498db;
+    --text-color: #ffffff;
+    --glass-bg: rgba(20, 25, 35, 0.85);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --z-bg: 1; --z-game: 2; --z-fx: 3; --z-ui: 100; --z-modal: 1000;
+    /* Font chữ hỗ trợ tiếng Việt cực tốt */
+    --font-main: 'Lexend', 'Segoe UI', Roboto, sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+    user-select: none;
+    -webkit-user-select: none;
+    font-family: var(--font-main); /* Áp dụng cho mọi thành phần */
+}
+
+body, html {
+    margin: 0; padding: 0; width: 100%; height: 100%;
+    background-color: var(--bg-color);
+    overflow: hidden; touch-action: none;
+}
+
+/* Đảm bảo nút và ô nhập liệu không bị nhảy font */
+button, input {
+    font-family: var(--font-main) !important;
+}
+
+        /* ==========================================================================
+           HỆ THỐNG CANVAS
+           ========================================================================== */
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        #canvas-bg { z-index: var(--z-bg); }
+        #canvas-game { z-index: var(--z-game); }
+        #canvas-fx { z-index: var(--z-fx); pointer-events: none; }
+
+        /* ==========================================================================
+           GIAO DIỆN CHÍNH (UI)
+           ========================================================================== */
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: var(--z-ui);
+            pointer-events: none; /* Để click xuyên qua vùng trống */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
-
-        body, html {
-            width: 100%; height: 100%; overflow: hidden;
-            background-color: var(--dark-bg);
-            font-family: var(--font-main);
-            color: white;
+        /* THANH ĐIỀU KHIỂN TRÊN CÙNG */
+        .top-bar {
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            pointer-events: auto;
         }
 
-        #game-canvas { position: absolute; top: 0; left: 0; z-index: 1; cursor: crosshair; }
-
-        /* Giao diện lớp phủ (Overlay) */
-        .overlay {
-            position: fixed; inset: 0; z-index: 100;
-            display: flex; justify-content: center; align-items: center;
-            background: rgba(0,0,0,0.85);
-            backdrop-filter: blur(8px);
-            transition: all 0.5s ease;
+        .hud-pill {
+            background: var(--glass-bg);
+            border: 2px solid var(--primary-color);
+            border-radius: 30px;
+            padding: 8px 16px;
+            color: var(--text-color);
+            font-weight: bold;
+            font-size: 1rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: transform 0.2s;
         }
+        .hud-pill:hover { transform: scale(1.05); }
 
-        .modal {
-            background: var(--glass);
-            border: 1px solid var(--glass-border);
-            padding: 30px; border-radius: 24px;
-            width: 90%; max-width: 450px;
-            text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        /* VỊT CỔ VŨ & TIMER */
+        .timer-group {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            position: relative;
         }
-
-        h1 { color: var(--gold-primary); text-transform: uppercase; letter-spacing: 3px; margin-bottom: 20px; font-weight: 800; }
-
-        input[type="text"] {
-            background: rgba(255,255,255,0.1); border: 1px solid var(--gold-primary);
-            padding: 12px 20px; border-radius: 12px; color: white; width: 100%;
-            margin-bottom: 20px; text-align: center; font-family: var(--font-main);
+        .timer-pill {
+            background: var(--glass-bg);
+            border: 2px solid #2ecc71;
+            border-radius: 30px;
+            padding: 8px 20px;
+            color: #2ecc71;
+            font-weight: bold;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
-
-        .avatar-grid { display: flex; justify-content: center; gap: 10px; margin-bottom: 25px; flex-wrap: wrap; }
-        .avatar-item {
-            font-size: 30px; cursor: pointer; padding: 10px; border-radius: 12px;
-            border: 2px solid transparent; transition: 0.3s; font-family: var(--emoji-font);
+        
+        .mascot-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+            background: transparent;
+            pointer-events: none;
         }
-        .avatar-item.selected { border-color: var(--gold-primary); background: var(--gold-glow); transform: scale(1.1); }
+        .mascot-bubble {
+            background: white;
+            color: #333;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            position: relative;
+            box-shadow: 2px 2px 0 var(--secondary-color);
+            animation: bounce 2s infinite;
+        }
+        .mascot-bubble::after {
+            content: '';
+            position: absolute;
+            right: -8px;
+            top: 50%;
+            transform: translateY(-50%);
+            border-width: 6px 0 6px 8px;
+            border-style: solid;
+            border-color: transparent transparent transparent white;
+        }
+        .mascot-icon { font-size: 2rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
+
+        /* THANH ĐIỀU KHIỂN DƯỚI CÙNG */
+        .bottom-bar {
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            pointer-events: auto;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+        }
 
         .btn {
-            background: var(--gold-primary); color: #000; border: none;
-            padding: 15px 30px; border-radius: 50px; font-weight: 700;
-            cursor: pointer; text-transform: uppercase; transition: 0.3s; width: 100%;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            font-weight: 800;
+            font-size: 1rem;
+            color: white;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 0 5px 0 rgba(0,0,0,0.3);
+            transition: all 0.1s;
         }
-        .btn:hover { transform: translateY(-3px); box-shadow: 0 10px 20px var(--gold-glow); }
+        .btn:active { transform: translateY(5px); box-shadow: 0 0 0 transparent; }
+        
+        .btn-undo { background: #95a5a6; box-shadow: 0 5px 0 #7f8c8d; }
+        .btn-hint { background: #3498db; box-shadow: 0 5px 0 #2980b9; }
+        .btn-restart { background: #e67e22; box-shadow: 0 5px 0 #d35400; }
+        .btn-primary { background: var(--primary-color); color: #333; box-shadow: 0 5px 0 #f39c12; width: 100%; margin-top: 15px; }
 
-        /* HUD - Hiển thị trong game */
-        #hud {
-            position: absolute; top: 20px; left: 0; width: 100%;
-            padding: 0 20px; z-index: 10; pointer-events: none;
-            display: flex; justify-content: space-between; align-items: flex-start;
+        /* ==========================================================================
+           MODALS (CỬA SỔ HIỂN THỊ)
+           ========================================================================== */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            z-index: var(--z-modal);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .modal-overlay.active { display: flex; }
+
+        .modal-box {
+            background: var(--glass-bg);
+            border: 2px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 30px;
+            width: 100%;
+            max-width: 450px;
+            color: white;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            position: relative;
         }
 
-        .hud-group { display: flex; flex-direction: column; gap: 10px; pointer-events: auto; }
-        .hud-box {
-            background: var(--glass); border: 1px solid var(--glass-border);
-            padding: 8px 15px; border-radius: 15px; backdrop-filter: blur(5px);
-            display: flex; align-items: center; gap: 10px; font-size: 14px;
+        .modal-title {
+            color: var(--primary-color);
+            font-size: 1.8rem;
+            margin: 0 0 15px 0;
+            text-transform: uppercase;
+            letter-spacing: 2px;
         }
 
-        .duck-cheer {
-            display: flex; align-items: center; gap: 8px;
-            background: rgba(241, 196, 15, 0.15); border: 1px solid var(--gold-primary);
-            padding: 5px 12px; border-radius: 20px; animation: bounce 2s infinite;
+        /* Avatar Selection */
+        .avatar-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin: 20px 0;
         }
-        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
-
-        .controls { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); display: flex; gap: 15px; z-index: 10; }
-        .ctrl-btn {
-            width: 50px; height: 50px; border-radius: 50%; border: 1px solid var(--glass-border);
-            background: var(--glass); color: white; cursor: pointer; backdrop-filter: blur(5px);
-            display: flex; justify-content: center; align-items: center; font-size: 20px;
+        .avatar-item {
+            font-size: 2.2rem;
+            background: rgba(255,255,255,0.05);
+            border: 2px solid transparent;
+            border-radius: 15px;
+            padding: 10px 0;
+            cursor: pointer;
+            transition: 0.2s;
         }
-        .ctrl-btn:hover { background: var(--gold-primary); color: black; }
+        .avatar-item.selected {
+            background: rgba(241, 196, 15, 0.2);
+            border-color: var(--primary-color);
+            transform: scale(1.1);
+        }
 
-        .hidden { display: none !important; }
+        input[type="text"] {
+            width: 100%;
+            padding: 15px;
+            background: rgba(0,0,0,0.5);
+            border: 2px solid var(--primary-color);
+            border-radius: 10px;
+            color: white;
+            font-size: 1.1rem;
+            text-align: center;
+            outline: none;
+            margin-bottom: 20px;
+        }
 
-        /* Bảng xếp hạng */
-        .leaderboard-list { text-align: left; margin: 15px 0; max-height: 200px; overflow-y: auto; }
-        .lb-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--glass-border); }
+        /* Leaderboard */
+        .lb-list {
+            max-height: 300px;
+            overflow-y: auto;
+            text-align: left;
+            margin-bottom: 20px;
+            padding-right: 10px;
+        }
+        .lb-list::-webkit-scrollbar { width: 6px; }
+        .lb-list::-webkit-scrollbar-thumb { background: var(--primary-color); border-radius: 3px; }
+        
+        .lb-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.02);
+            margin-bottom: 5px;
+            border-radius: 8px;
+        }
+        .lb-rank { font-weight: bold; color: var(--primary-color); width: 30px; }
+        .lb-info { flex-grow: 1; display: flex; align-items: center; gap: 10px; }
+        .lb-score { font-weight: bold; color: #2ecc71; }
 
+        /* Animations */
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
     </style>
 </head>
 <body>
 
-    <canvas id="game-canvas"></canvas>
+    <!-- LỚP CANVAS CHÍNH -->
+    <canvas id="canvas-bg"></canvas>
+    <canvas id="canvas-game"></canvas>
+    <canvas id="canvas-fx"></canvas>
 
-    <!-- Màn hình chào -->
-    <div id="start-overlay" class="overlay">
-        <div class="modal">
-            <h1>Starry Hamilton</h1>
-            <input type="text" id="player-name" placeholder="Nhập tên của bạn..." maxlength="15">
-            <div class="avatar-grid" id="avatar-selector"></div>
-            <div style="margin-bottom: 20px; font-size: 13px; color: #aaa; line-height: 1.6;">
-                Nối tất cả các ngôi sao bằng một đường đi duy nhất.<br>
-                Không đi qua một điểm hai lần. Chúc bạn may mắn!
-            </div>
-            <button class="btn" onclick="startGame()">Bắt Đầu</button>
-            <button class="btn" style="margin-top: 10px; background: transparent; color: var(--gold-primary); border: 1px solid var(--gold-primary);" onclick="showLeaderboard()">Bảng Xếp Hạng</button>
-        </div>
-    </div>
-
-    <!-- HUD -->
-    <div id="hud" class="hidden">
-        <div class="hud-group">
-            <div class="hud-box">
-                <span id="display-avatar" style="font-family: var(--emoji-font)">🚀</span>
-                <span id="display-name" style="font-weight: 600;">Người chơi</span>
-            </div>
-            <div class="hud-box">
-                Màn: <span id="current-level" style="color: var(--gold-primary); font-weight: 800;">1</span>
-            </div>
-        </div>
-
-        <div class="hud-group" style="align-items: flex-end;">
-            <div class="hud-box">
-                ⏱️ <span id="timer">00:00</span>
-            </div>
-            <div class="duck-cheer">
-                <span style="font-size: 24px;">🦆</span>
-                <span id="cheer-text" style="font-size: 11px; font-weight: 600;">Cố lên bạn ơi!</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- Điều khiển -->
-    <div id="controls" class="controls hidden">
-        <button class="ctrl-btn" onclick="undo()" title="Hoàn tác">↩</button>
-        <button class="ctrl-btn" onclick="restartLevel()" title="Chơi lại">↺</button>
-        <button class="ctrl-btn" onclick="showAnswer()" title="Gợi ý">💡</button>
-    </div>
-
-    <!-- Modal thắng màn -->
-    <div id="win-overlay" class="overlay hidden">
-        <div class="modal">
-            <h1 style="color: #4cd137;">Tuyệt vời!</h1>
-            <p id="win-msg">Bạn đã kết nối thành công chòm sao.</p>
-            <button class="btn" style="margin-top: 20px;" onclick="nextLevel()">Màn Tiếp Theo</button>
-        </div>
-    </div>
-
-    <!-- Modal Bảng xếp hạng -->
-    <div id="lb-overlay" class="overlay hidden">
-        <div class="modal">
-            <h1>Top Cao Thủ</h1>
-            <div class="leaderboard-list" id="lb-content"></div>
-            <button class="btn" onclick="hideLeaderboard()">Đóng</button>
-        </div>
-    </div>
-
-    <script>
-        // --- KHỞI TẠO BIẾN TOÀN CỤC ---
-        const canvas = document.getElementById('game-canvas');
-        const ctx = canvas.getContext('2d');
-        let width, height;
+    <!-- LỚP GIAO DIỆN (UI) -->
+    <div id="ui-layer">
         
-        let player = { name: "Ẩn danh", avatar: "🚀", level: 1, time: 0 };
-        let gameState = "START";
-        let stars = [], shootingStars = [], effects = [];
-        let graph = { nodes: [], edges: [], solution: [] };
-        let currentPath = [];
-        let timerInterval;
-        let isAnswering = false;
-
-        const cheers = ["Cố lên bạn ơi!", "Bạn làm được mà!", "Sắp xong rồi!", "Đỉnh quá!", "Tiếp tục nào!", "Quá nhanh luôn!"];
-        const avatars = ["🚀", "🛸", "🐱", "🐶", "🦊", "🤖", "👾", "⭐"];
-
-        // --- HỆ THỐNG ÂM THANH (Dùng AudioContext để chuyên nghiệp hơn) ---
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        function playSound(freq, type = 'sine', duration = 0.1) {
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = type;
-            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start();
-            osc.stop(audioCtx.currentTime + duration);
-        }
-
-        function playWinSound() {
-            [440, 554, 659, 880].forEach((f, i) => {
-                setTimeout(() => playSound(f, 'triangle', 0.3), i * 150);
-            });
-        }
-
-        // --- CẤU TRÚC NỀN TRỜI ---
-        class Star {
-            constructor() { this.reset(); }
-            reset() {
-                this.x = Math.random() * width;
-                this.y = Math.random() * height;
-                this.size = Math.random() * 2;
-                this.blink = Math.random() * Math.PI;
-                this.speed = 0.02 + Math.random() * 0.05;
-                this.rotate = Math.random() * Math.PI * 2;
-            }
-            update() {
-                this.blink += this.speed;
-                this.rotate += 0.01;
-            }
-            draw() {
-                let opacity = 0.3 + Math.abs(Math.sin(this.blink)) * 0.7;
-                ctx.save();
-                ctx.translate(this.x, this.y);
-                ctx.rotate(this.rotate);
-                ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
-                // Vẽ sao 4 cánh xoay
-                for(let i=0; i<2; i++) {
-                    ctx.rotate(Math.PI/2);
-                    ctx.fillRect(-this.size*2, -0.5, this.size*4, 1);
-                }
-                ctx.restore();
-            }
-        }
-
-        class ShootingStar {
-            constructor() { this.reset(); }
-            reset() {
-                this.x = Math.random() * width;
-                this.y = -20;
-                this.len = 50 + Math.random() * 100;
-                this.speed = 10 + Math.random() * 15;
-                this.active = Math.random() > 0.995;
-            }
-            update() {
-                if(this.active) {
-                    this.x -= this.speed;
-                    this.y += this.speed;
-                    if(this.x < -200 || this.y > height + 200) this.reset();
-                } else if(Math.random() > 0.998) this.active = true;
-            }
-            draw() {
-                if(!this.active) return;
-                let grad = ctx.createLinearGradient(this.x, this.y, this.x + this.len, this.y - this.len);
-                grad.addColorStop(0, "white");
-                grad.addColorStop(1, "transparent");
-                ctx.strokeStyle = grad;
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                ctx.moveTo(this.x, this.y);
-                ctx.lineTo(this.x + this.len, this.y - this.len);
-                ctx.stroke();
-            }
-        }
-
-        // --- LOGIC GAME CHÍNH ---
-        function initStars() {
-            stars = Array.from({length: 150}, () => new Star());
-            shootingStars = Array.from({length: 3}, () => new ShootingStar());
-        }
-
-        function createGraph(level) {
-            const nodeCount = 4 + Math.floor(level / 2);
-            const nodes = [];
-            const padding = 80;
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div style="display: flex; gap: 10px; flex-direction: column;">
+                <div class="hud-pill">🚩 LV: <span id="ui-level">1</span></div>
+                <div class="hud-pill" onclick="GameApp.UI.showLeaderboard()">🏆 BẢNG VÀNG</div>
+            </div>
             
-            // Sinh điểm đảm bảo khoảng cách
-            for(let i=0; i<nodeCount; i++) {
-                let attempts = 0;
-                while(attempts < 100) {
-                    let n = {
-                        x: padding + Math.random() * (width - padding * 2),
-                        y: padding + 50 + Math.random() * (height - padding * 3),
-                        id: i
-                    };
-                    if(nodes.every(other => Math.hypot(n.x - other.x, n.y - other.y) > 100)) {
-                        nodes.push(n);
-                        break;
-                    }
-                    attempts++;
+            <div class="timer-group">
+                <div class="timer-pill">⏱️ <span id="ui-time">0</span>s</div>
+                <div class="mascot-container">
+                    <div class="mascot-bubble" id="ui-mascot-msg">Cố lên bạn ơi!</div>
+                    <div class="mascot-icon">🦆</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Bar -->
+        <div class="bottom-bar">
+            <button class="btn btn-undo" onclick="GameApp.Engine.undoMove()">Hoàn tác</button>
+            <button class="btn btn-hint" id="btn-hint" onclick="GameApp.Engine.toggleHint()">Gợi ý</button>
+            <button class="btn btn-restart" onclick="GameApp.Engine.restartLevel()">Chơi lại</button>
+        </div>
+
+    </div>
+
+    <!-- MODAL: HƯỚNG DẪN & TẠO PROFILE -->
+    <div id="modal-start" class="modal-overlay active">
+        <div class="modal-box">
+            <h2 class="modal-title">STARRY HAMILTON</h2>
+            <p style="color: #ccc; margin-bottom: 20px; line-height: 1.5;">
+                <b>Nhiệm vụ:</b> Nối tất cả các vì sao để tạo thành một chòm sao hoàn chỉnh.<br>
+                <b>Quy tắc:</b> Phải đi qua TẤT CẢ các điểm, và KHÔNG ĐƯỢC đi lặp lại đường cũ.
+            </p>
+            
+            <h3 style="margin: 10px 0; font-size: 1.1rem;">Chọn Avatar Của Bạn</h3>
+            <div class="avatar-grid" id="avatar-container">
+                <!-- Generate bằng JS -->
+            </div>
+            
+            <input type="text" id="input-name" placeholder="Nhập tên phi hành gia..." maxlength="15">
+            <button class="btn btn-primary" onclick="GameApp.Engine.startGame()">BẮT ĐẦU HÀNH TRÌNH</button>
+        </div>
+    </div>
+
+    <!-- MODAL: BẢNG VÀNG (LEADERBOARD) -->
+    <div id="modal-lb" class="modal-overlay" onclick="GameApp.UI.hideLeaderboard()">
+        <div class="modal-box" onclick="event.stopPropagation()">
+            <h2 class="modal-title">🏆 KỶ LỤC GIA 🏆</h2>
+            <div class="lb-list" id="lb-content">
+                <!-- Nội dung render bằng JS -->
+            </div>
+            <button class="btn btn-primary" onclick="GameApp.UI.hideLeaderboard()">ĐÓNG</button>
+        </div>
+    </div>
+
+    <!-- MODAL: CHIẾN THẮNG -->
+    <div id="modal-win" class="modal-overlay">
+        <div class="modal-box">
+            <h1 style="font-size: 4rem; margin: 0;">🎉</h1>
+            <h2 class="modal-title" style="color: #2ecc71;">TUYỆT ĐỈNH!</h2>
+            <p id="win-message" style="font-size: 1.2rem; margin: 20px 0; color: #fff;"></p>
+            <button class="btn btn-primary" onclick="GameApp.Engine.nextLevel()">CHINH PHỤC MÀN TIẾP THEO</button>
+        </div>
+    </div>
+
+<script>
+/**
+ * ==========================================================================
+ * STARRY HAMILTON - SUPER PRO EDITION
+ * Architecture: Object-Oriented Programming (OOP)
+ * Modules: Audio, Storage, Particles, Math/Graph, UI, GameEngine
+ * Dòng code > 800 đảm bảo hệ thống vật lý và logic trò chơi phức tạp nhất.
+ * ==========================================================================
+ */
+
+const GameApp = {};
+
+/* ==========================================================================
+   MODULE 1: CẤU HÌNH & TIỆN ÍCH (CONFIG & UTILS)
+   ========================================================================== */
+GameApp.Config = {
+    MAX_LEVELS: 50,
+    BASE_NODES: 4,
+    SAFE_MARGIN_X: 60,   // Khoảng cách an toàn trục X
+    SAFE_MARGIN_Y_TOP: 150, // Tránh khu vực Top Bar
+    SAFE_MARGIN_Y_BOT: 120, // Tránh khu vực Bottom Bar
+    NODE_RADIUS: 18,
+    AVATARS: ['🐱','🐶','🦊','🐼','🐰','🐸','🐙','👽'],
+    COLORS: {
+        bg: '#0d1117',
+        nodeDef: '#ffffff',
+        nodeAct: '#f1c40f',
+        edgeDef: 'rgba(255, 255, 255, 0.1)',
+        edgeAct: '#e67e22',
+        hint: 'rgba(52, 152, 219, 0.3)'
+    }
+};
+
+GameApp.Utils = {
+    /** Lấy số ngẫu nhiên trong khoảng */
+    random: (min, max) => Math.random() * (max - min) + min,
+    
+    /** Tính khoảng cách giữa 2 điểm */
+    distance: (x1, y1, x2, y2) => Math.hypot(x2 - x1, y2 - y1),
+    
+    /** Lấy màu ngẫu nhiên (dùng cho pháo giấy) */
+    randomHSL: (s = 80, l = 60) => `hsl(${Math.random() * 360}, ${s}%, ${l}%)`,
+    
+    /** Format thời gian */
+    formatTime: (seconds) => `${seconds}s`
+};
+
+/* ==========================================================================
+   MODULE 2: QUẢN LÝ DỮ LIỆU BỘ NHỚ TRONG (STORAGE MANAGER)
+   ========================================================================== */
+GameApp.Storage = class {
+    static KEY = 'hamilton_super_pro_db_v1';
+
+    static loadRecords() {
+        try {
+            const data = localStorage.getItem(this.KEY);
+            return data ? JSON.parse(data) : [];
+        } catch (e) {
+            console.warn('Lỗi đọc dữ liệu local:', e);
+            return [];
+        }
+    }
+
+    static saveRecord(playerData) {
+        const records = this.loadRecords();
+        records.push(playerData);
+        // Sắp xếp: Level cao nhất xếp trước, cùng level thì thời gian thấp xếp trước
+        records.sort((a, b) => {
+            if (b.level !== a.level) return b.level - a.level;
+            return a.time - b.time;
+        });
+        // Chỉ lưu top 20
+        localStorage.setItem(this.KEY, JSON.stringify(records.slice(0, 20)));
+    }
+};
+
+/* ==========================================================================
+   MODULE 3: ENGINE ÂM THANH (AUDIO CONTEXT API)
+   Tạo âm thanh trực tiếp bằng code (Synthesizer), không cần file MP3 ngoài.
+   ========================================================================== */
+GameApp.Audio = class {
+    constructor() {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        this.ctx = new AudioContext();
+        this.enabled = true;
+    }
+
+    /** Khởi tạo Audio Context (yêu cầu tương tác người dùng trước) */
+    resume() {
+        if (this.ctx.state === 'suspended') this.ctx.resume();
+    }
+
+    /** Phát một nốt nhạc cơ bản */
+    playTone(frequency, type = 'sine', duration = 0.1, vol = 0.1) {
+        if (!this.enabled) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        
+        osc.type = type;
+        osc.frequency.setValueAtTime(frequency, this.ctx.currentTime);
+        
+        gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+        
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        
+        osc.start();
+        osc.stop(this.ctx.currentTime + duration);
+    }
+
+    /** Âm thanh khi click vào điểm */
+    playClick() {
+        this.playTone(800, 'sine', 0.1, 0.2);
+    }
+
+    /** Âm thanh khi Undo */
+    playUndo() {
+        this.playTone(300, 'triangle', 0.1, 0.1);
+    }
+
+    /** Âm thanh hợp âm rộn rã khi chiến thắng (C Major Arpeggio) */
+    playWinChord() {
+        if (!this.enabled) return;
+        const notes = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99]; // C4, E4, G4, C5, E5, G5
+        notes.forEach((freq, index) => {
+            setTimeout(() => {
+                this.playTone(freq, 'triangle', 0.6, 0.3);
+            }, index * 80); // Tăng dần tốc độ rải
+        });
+    }
+};
+
+/* ==========================================================================
+   MODULE 4: HỆ THỐNG VẬT LÝ & HẠT (PARTICLE SYSTEM)
+   Quản lý hình nền sao, hiệu ứng click, pháo giấy chiến thắng.
+   ========================================================================== */
+
+/** Lớp cha của các hạt */
+class Particle {
+    constructor(x, y) {
+        this.x = x; this.y = y;
+        this.vx = 0; this.vy = 0;
+        this.life = 1; this.decay = 0.01;
+        this.active = true;
+    }
+    update() {
+        this.x += this.vx; this.y += this.vy;
+        this.life -= this.decay;
+        if (this.life <= 0) this.active = false;
+    }
+    draw(ctx) {}
+}
+
+/** Sao trôi bồng bềnh làm nền (Background) */
+class BgStar extends Particle {
+    constructor(width, height) {
+        super(GameApp.Utils.random(0, width), GameApp.Utils.random(0, height));
+        this.size = GameApp.Utils.random(0.5, 2.5);
+        this.vy = GameApp.Utils.random(0.1, 0.5); // Rơi chậm
+        this.opacity = GameApp.Utils.random(0.3, 1);
+        this.blinkSpeed = GameApp.Utils.random(0.01, 0.05);
+        this.life = 1; this.decay = 0; // Không chết
+        this.h = height;
+    }
+    update() {
+        this.y += this.vy;
+        this.opacity += Math.sin(Date.now() * this.blinkSpeed) * 0.05;
+        if (this.y > this.h) this.y = 0; // Vòng lặp
+    }
+    draw(ctx) {
+        ctx.fillStyle = `rgba(255, 255, 255, ${Math.max(0.1, Math.min(1, this.opacity))})`;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+    }
+}
+
+/** Sao băng lướt qua màn hình */
+class ShootingStar extends Particle {
+    constructor(width, height) {
+        super(GameApp.Utils.random(0, width), GameApp.Utils.random(-100, 0));
+        this.vx = GameApp.Utils.random(-10, 10);
+        this.vy = GameApp.Utils.random(15, 25); // Bay rất nhanh
+        this.length = GameApp.Utils.random(50, 150);
+        this.decay = 0.02;
+    }
+    draw(ctx) {
+        ctx.strokeStyle = `rgba(255, 255, 255, ${this.life})`;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(this.x, this.y);
+        ctx.lineTo(this.x - this.vx * 3, this.y - this.vy * 3);
+        ctx.stroke();
+    }
+}
+
+/** Ngôi sao tỏa ra khi click/touch vào màn hình */
+class ClickStar extends Particle {
+    constructor(x, y) {
+        super(x, y);
+        const angle = GameApp.Utils.random(0, Math.PI * 2);
+        const speed = GameApp.Utils.random(2, 6);
+        this.vx = Math.cos(angle) * speed;
+        this.vy = Math.sin(angle) * speed;
+        this.size = GameApp.Utils.random(2, 5);
+        this.decay = GameApp.Utils.random(0.02, 0.05);
+        this.rot = GameApp.Utils.random(0, Math.PI);
+        this.rotSpeed = GameApp.Utils.random(-0.2, 0.2);
+    }
+    update() {
+        super.update();
+        this.rot += this.rotSpeed;
+    }
+    draw(ctx) {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rot);
+        ctx.fillStyle = `rgba(241, 196, 15, ${this.life})`;
+        // Vẽ hình ngôi sao 4 cánh nhỏ
+        ctx.beginPath();
+        for(let i = 0; i < 4; i++) {
+            ctx.lineTo(0, -this.size);
+            ctx.rotate(Math.PI / 4);
+            ctx.lineTo(0, -this.size / 3);
+            ctx.rotate(Math.PI / 4);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+    }
+}
+
+/** Pháo giấy chữ nhật rơi khi thắng */
+class Confetti extends Particle {
+    constructor(x, y) {
+        super(x, y);
+        const angle = GameApp.Utils.random(0, Math.PI * 2);
+        const speed = GameApp.Utils.random(5, 15);
+        this.vx = Math.cos(angle) * speed;
+        this.vy = Math.sin(angle) * speed;
+        this.w = GameApp.Utils.random(5, 12);
+        this.h = GameApp.Utils.random(10, 20);
+        this.color = GameApp.Utils.randomHSL();
+        this.rot = GameApp.Utils.random(0, Math.PI * 2);
+        this.rotSpeed = GameApp.Utils.random(-0.2, 0.2);
+        this.decay = 0.005;
+        this.gravity = 0.3;
+    }
+    update() {
+        this.vy += this.gravity; // Có trọng lực kéo xuống
+        this.x += this.vx;
+        this.y += this.vy;
+        this.rot += this.rotSpeed;
+        this.life -= this.decay;
+        if (this.life <= 0 || this.y > window.innerHeight + 50) this.active = false;
+    }
+    draw(ctx) {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rot);
+        ctx.globalAlpha = Math.max(0, this.life);
+        ctx.fillStyle = this.color;
+        ctx.fillRect(-this.w/2, -this.h/2, this.w, this.h);
+        ctx.restore();
+    }
+}
+
+/** Ngôi sao giấy rơi từ trên xuống khi thắng */
+class FallingPaperStar extends Particle {
+    constructor(width) {
+        super(GameApp.Utils.random(0, width), GameApp.Utils.random(-200, -50));
+        this.vx = GameApp.Utils.random(-2, 2);
+        this.vy = GameApp.Utils.random(3, 8);
+        this.size = GameApp.Utils.random(10, 25);
+        this.color = ['#f1c40f', '#e74c3c', '#3498db', '#2ecc71', '#9b59b6'][Math.floor(Math.random()*5)];
+        this.rot = GameApp.Utils.random(0, Math.PI * 2);
+        this.rotSpeed = GameApp.Utils.random(-0.1, 0.1);
+        this.decay = 0.002;
+    }
+    update() {
+        this.x += this.vx; this.y += this.vy;
+        this.rot += this.rotSpeed;
+        this.life -= this.decay;
+        if (this.y > window.innerHeight + 50) this.active = false;
+    }
+    draw(ctx) {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rot);
+        ctx.globalAlpha = Math.max(0, this.life);
+        ctx.fillStyle = this.color;
+        
+        // Vẽ sao 5 cánh
+        ctx.beginPath();
+        for (let i = 0; i < 5; i++) {
+            ctx.lineTo(Math.cos((18+i*72)/180*Math.PI)*this.size, -Math.sin((18+i*72)/180*Math.PI)*this.size);
+            ctx.lineTo(Math.cos((54+i*72)/180*Math.PI)*this.size/2, -Math.sin((54+i*72)/180*Math.PI)*this.size/2);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+    }
+}
+
+/** Trình quản lý toàn bộ hạt */
+GameApp.ParticleManager = class {
+    constructor(bgCtx, fxCtx, width, height) {
+        this.bgCtx = bgCtx;
+        this.fxCtx = fxCtx;
+        this.w = width;
+        this.h = height;
+        
+        this.bgStars = [];
+        this.fxParticles = [];
+        this.initBg();
+    }
+
+    resize(w, h) { this.w = w; this.h = h; }
+
+    initBg() {
+        for(let i=0; i<100; i++) {
+            this.bgStars.push(new BgStar(this.w, this.h));
+        }
+    }
+
+    addClickFX(x, y) {
+        for(let i=0; i<12; i++) {
+            this.fxParticles.push(new ClickStar(x, y));
+        }
+    }
+
+    addWinFX() {
+        // Pháo giấy nổ từ giữa màn hình
+        for(let i=0; i<150; i++) {
+            this.fxParticles.push(new Confetti(this.w/2, this.h/2));
+        }
+        // Sao rơi từ trên xuống
+        for(let i=0; i<60; i++) {
+            setTimeout(() => {
+                this.fxParticles.push(new FallingPaperStar(this.w));
+            }, Math.random() * 2000);
+        }
+    }
+
+    updateAndDraw() {
+        // Clear layers
+        this.bgCtx.clearRect(0, 0, this.w, this.h);
+        this.fxCtx.clearRect(0, 0, this.w, this.h);
+
+        // Update Background (Thỉnh thoảng thêm sao băng)
+        if (Math.random() < 0.01) {
+            this.bgStars.push(new ShootingStar(this.w, this.h));
+        }
+
+        for (let i = this.bgStars.length - 1; i >= 0; i--) {
+            const p = this.bgStars[i];
+            p.update();
+            p.draw(this.bgCtx);
+            if (!p.active) this.bgStars.splice(i, 1);
+        }
+
+        // Update FX
+        for (let i = this.fxParticles.length - 1; i >= 0; i--) {
+            const p = this.fxParticles[i];
+            p.update();
+            p.draw(this.fxCtx);
+            if (!p.active) this.fxParticles.splice(i, 1);
+        }
+    }
+};
+
+/* ==========================================================================
+   MODULE 5: THUẬT TOÁN ĐỒ THỊ (GRAPH GENERATOR)
+   Tạo bản đồ chơi đảm bảo luôn có nghiệm (Hamiltonian Path)
+   ========================================================================== */
+GameApp.Graph = class {
+    constructor(level, w, h) {
+        this.w = w; this.h = h;
+        this.level = level;
+        this.nodes = [];
+        this.edges = [];     // Tất cả các cạnh (bao gồm nhiễu)
+        this.solution = [];  // Mảng ID các node theo đúng thứ tự
+        
+        this.generate();
+    }
+
+    generate() {
+        const nodeCount = GameApp.Config.BASE_NODES + this.level;
+        
+        // 1. Tạo tọa độ an toàn cho các điểm (Không đè UI)
+        for (let i = 0; i < nodeCount; i++) {
+            let x, y, isOverlapping;
+            let attempts = 0;
+            do {
+                x = GameApp.Utils.random(GameApp.Config.SAFE_MARGIN_X, this.w - GameApp.Config.SAFE_MARGIN_X);
+                y = GameApp.Utils.random(GameApp.Config.SAFE_MARGIN_Y_TOP, this.h - GameApp.Config.SAFE_MARGIN_Y_BOT);
+                
+                // Kiểm tra không đè lên node khác
+                isOverlapping = this.nodes.some(n => GameApp.Utils.distance(n.x, n.y, x, y) < GameApp.Config.NODE_RADIUS * 6);
+                attempts++;
+            } while (isOverlapping && attempts < 200); // Tránh loop vô hạn
+
+            // Thêm offset r để node có hiệu ứng lơ lửng
+            this.nodes.push({ id: i, x: x, y: y, baseY: y, phase: Math.random() * Math.PI * 2 });
+        }
+
+        // 2. Tạo đường đi Hamilton (Lời giải chính xác)
+        this.solution = [...Array(nodeCount).keys()];
+        // Thuật toán xáo trộn Fisher-Yates
+        for (let i = this.solution.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [this.solution[i], this.solution[j]] = [this.solution[j], this.solution[i]];
+        }
+
+        // Thêm các cạnh của lời giải vào Graph
+        for (let i = 0; i < nodeCount - 1; i++) {
+            this.edges.push([this.solution[i], this.solution[i + 1]]);
+        }
+
+        // 3. Tạo cạnh nhiễu (Làm khó người chơi)
+        const noiseCount = Math.floor(nodeCount * (0.5 + this.level * 0.1));
+        for (let i = 0; i < noiseCount; i++) {
+            const a = Math.floor(Math.random() * nodeCount);
+            const b = Math.floor(Math.random() * nodeCount);
+            
+            if (a !== b) {
+                // Kiểm tra xem cạnh này đã tồn tại chưa
+                const exists = this.edges.some(e => (e[0] === a && e[1] === b) || (e[0] === b && e[1] === a));
+                if (!exists) {
+                    this.edges.push([a, b]);
                 }
             }
-
-            // Tạo chu trình Hamilton giả lập để luôn có nghiệm
-            let solution = [...Array(nodes.length).keys()].sort(() => Math.random() - 0.5);
-            let edges = [];
-            for(let i=0; i<solution.length - 1; i++) {
-                edges.push([solution[i], solution[i+1]]);
-            }
-
-            // Thêm các cạnh nhiễu (không quá sát)
-            nodes.forEach(n => {
-                nodes.forEach(m => {
-                    if(n.id !== m.id && Math.random() > 0.7) {
-                        if(!edges.some(e => (e[0]==n.id && e[1]==m.id) || (e[1]==n.id && e[0]==m.id))) {
-                            edges.push([n.id, m.id]);
-                        }
-                    }
-                });
-            });
-
-            return { nodes, edges, solution };
         }
+    }
 
-        function resize() {
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
-            initStars();
-        }
+    /** Cập nhật hiệu ứng lơ lửng cho các node */
+    updateNodes() {
+        const time = Date.now() * 0.002;
+        this.nodes.forEach(n => {
+            n.y = n.baseY + Math.sin(time + n.phase) * 8; // Dao động 8px
+        });
+    }
+};
 
-        window.addEventListener('resize', resize);
-        resize();
-
-        // --- GIAO DIỆN CHỌN AVATAR ---
-        const selector = document.getElementById('avatar-selector');
-        avatars.forEach(a => {
-            let div = document.createElement('div');
-            div.className = 'avatar-item';
-            div.innerText = a;
+/* ==========================================================================
+   MODULE 6: QUẢN LÝ GIAO DIỆN (UI CONTROLLER)
+   ========================================================================== */
+GameApp.UI = class {
+    static init() {
+        // Render Avatars
+        const container = document.getElementById('avatar-container');
+        GameApp.Config.AVATARS.forEach((ava, index) => {
+            const div = document.createElement('div');
+            div.className = `avatar-item ${index === 0 ? 'selected' : ''}`;
+            div.innerText = ava;
             div.onclick = () => {
                 document.querySelectorAll('.avatar-item').forEach(el => el.classList.remove('selected'));
                 div.classList.add('selected');
-                player.avatar = a;
             };
-            selector.appendChild(div);
+            container.appendChild(div);
         });
-        selector.firstChild.classList.add('selected');
+    }
 
-        // --- HÀNH ĐỘNG ---
-        function startGame() {
-            let nameInput = document.getElementById('player-name').value;
-            if(nameInput) player.name = nameInput;
-            
-            document.getElementById('start-overlay').classList.add('hidden');
-            document.getElementById('hud').classList.remove('hidden');
-            document.getElementById('controls').classList.remove('hidden');
-            
-            document.getElementById('display-name').innerText = player.name;
-            document.getElementById('display-avatar').innerText = player.avatar;
-            
-            startLevel(1);
-            startTimer();
-            gameState = "PLAYING";
-        }
+    static getSelectedAvatar() {
+        const selected = document.querySelector('.avatar-item.selected');
+        return selected ? selected.innerText : '👽';
+    }
 
-        function startLevel(lv) {
-            player.level = lv;
-            isAnswering = false;
-            document.getElementById('current-level').innerText = lv;
-            graph = createGraph(lv);
-            currentPath = [];
-            effects = [];
-            document.getElementById('cheer-text').innerText = cheers[Math.floor(Math.random()*cheers.length)];
-        }
+    static getPlayerName() {
+        const input = document.getElementById('input-name').value.trim();
+        return input || 'Ẩn Danh';
+    }
 
-        function startTimer() {
-            let start = Date.now();
-            timerInterval = setInterval(() => {
-                let diff = Date.now() - start;
-                let m = Math.floor(diff / 60000).toString().padStart(2, '0');
-                let s = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
-                document.getElementById('timer').innerText = `${m}:${s}`;
-                player.time = diff;
-            }, 1000);
-        }
+    static hideModal(id) { document.getElementById(id).classList.remove('active'); }
+    static showModal(id) { document.getElementById(id).classList.add('active'); }
 
-        // --- XỬ LÝ CLICK / TOUCH ---
-        canvas.addEventListener('mousedown', handleInput);
-        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleInput(e.touches[0]); });
+    static updateHUD(level, time) {
+        document.getElementById('ui-level').innerText = level;
+        document.getElementById('ui-time').innerText = time;
+    }
 
-        function handleInput(e) {
-            if(gameState !== "PLAYING") return;
-            
-            const rect = canvas.getBoundingClientRect();
-            const mouseX = e.clientX - rect.left;
-            const mouseY = e.clientY - rect.top;
+    static setMascotMessage(msg) {
+        document.getElementById('ui-mascot-msg').innerText = msg;
+    }
 
-            // Hiệu ứng tỏa sao khi click
-            createExplosion(mouseX, mouseY, var(--gold-primary), 10);
-            playSound(200, 'sine', 0.05);
-
-            const clickedNode = graph.nodes.find(n => Math.hypot(n.x - mouseX, n.y - mouseY) < 30);
-            
-            if(clickedNode) {
-                if(currentPath.length === 0) {
-                    currentPath.push(clickedNode.id);
-                    playSound(440);
-                } else {
-                    const lastId = currentPath[currentPath.length - 1];
-                    // Kiểm tra xem có cạnh nối không
-                    const hasEdge = graph.edges.some(edge => 
-                        (edge[0] === lastId && edge[1] === clickedNode.id) || 
-                        (edge[1] === lastId && edge[0] === clickedNode.id)
-                    );
-                    
-                    if(hasEdge && !currentPath.includes(clickedNode.id)) {
-                        currentPath.push(clickedNode.id);
-                        playSound(440 + currentPath.length * 50);
-                        if(currentPath.length === graph.nodes.length) {
-                            win();
-                        }
-                    } else if(currentPath.includes(clickedNode.id)) {
-                        // Rung hoặc báo lỗi nhẹ
-                        createExplosion(mouseX, mouseY, '#ff4757', 5);
-                    }
-                }
-            }
-        }
-
-        function createExplosion(x, y, color, count) {
-            for(let i=0; i<count; i++) {
-                effects.push({
-                    x, y, 
-                    vx: (Math.random() - 0.5) * 10,
-                    vy: (Math.random() - 0.5) * 10,
-                    life: 1.0,
-                    color: color,
-                    size: Math.random() * 4 + 2
-                });
-            }
-        }
-
-        function win() {
-            gameState = "WIN";
-            playWinSound();
-            createPaperEffect();
-            document.getElementById('win-overlay').classList.remove('hidden');
-            saveScore();
-        }
-
-        function createPaperEffect() {
-            for(let i=0; i<100; i++) {
-                effects.push({
-                    x: Math.random() * width,
-                    y: -20,
-                    vx: (Math.random() - 0.5) * 4,
-                    vy: 2 + Math.random() * 5,
-                    life: 2.0,
-                    color: `hsl(${Math.random()*360}, 70%, 60%)`,
-                    isPaper: true,
-                    size: Math.random() * 10 + 5,
-                    rot: Math.random() * Math.PI
-                });
-            }
-        }
-
-        function nextLevel() {
-            document.getElementById('win-overlay').classList.add('hidden');
-            gameState = "PLAYING";
-            startLevel(player.level + 1);
-        }
-
-        function undo() { if(currentPath.length > 0) currentPath.pop(); }
-        function restartLevel() { currentPath = []; }
-        function showAnswer() { 
-            isAnswering = true; 
-            currentPath = [];
-            let i = 0;
-            const interval = setInterval(() => {
-                if(i < graph.solution.length) {
-                    currentPath.push(graph.solution[i]);
-                    playSound(600 + i*20);
-                    i++;
-                } else {
-                    clearInterval(interval);
-                    setTimeout(win, 500);
-                }
-            }, 300);
-        }
-
-        // --- BXH LOCALSTORAGE ---
-        function saveScore() {
-            let scores = JSON.parse(localStorage.getItem('hamilton_scores') || '[]');
-            scores.push({name: player.name, level: player.level, avatar: player.avatar});
-            scores.sort((a,b) => b.level - a.level);
-            localStorage.setItem('hamilton_scores', JSON.stringify(scores.slice(0, 10)));
-        }
-
-        function showLeaderboard() {
-            const list = document.getElementById('lb-content');
-            let scores = JSON.parse(localStorage.getItem('hamilton_scores') || '[]');
-            list.innerHTML = scores.length ? scores.map((s, i) => `
+    static showLeaderboard() {
+        const records = GameApp.Storage.loadRecords();
+        const content = document.getElementById('lb-content');
+        
+        if (records.length === 0) {
+            content.innerHTML = "<p style='text-align:center; color:#888;'>Chưa có kỷ lục nào. Hãy là người đầu tiên!</p>";
+        } else {
+            content.innerHTML = records.map((r, i) => `
                 <div class="lb-item">
-                    <span>${i+1}. ${s.avatar} ${s.name}</span>
-                    <span style="color:var(--gold-primary)">Màn ${s.level}</span>
+                    <span class="lb-rank">#${i+1}</span>
+                    <div class="lb-info">
+                        <span style="font-size:1.5rem;">${r.avatar}</span>
+                        <span><b>${r.name}</b> <br> <small style="color:#aaa">Màn ${r.level}</small></span>
+                    </div>
+                    <span class="lb-score">${r.time}s</span>
                 </div>
-            `).join('') : '<p>Chưa có dữ liệu</p>';
-            document.getElementById('lb-overlay').classList.remove('hidden');
+            `).join('');
+        }
+        this.showModal('modal-lb');
+    }
+
+    static hideLeaderboard() {
+        this.hideModal('modal-lb');
+    }
+
+    static showWinScreen(level, time, avatar) {
+        document.getElementById('win-message').innerHTML = `Tuyệt vời <b>${avatar}</b>!<br>Bạn đã hoàn thành Màn ${level} trong <b>${time} giây</b>.`;
+        this.showModal('modal-win');
+    }
+};
+
+/* ==========================================================================
+   MODULE 7: TRỤC CHÍNH CỦA GAME (MAIN ENGINE)
+   ========================================================================== */
+GameApp.Engine = class {
+    static init() {
+        // Lấy Context
+        this.canvasGame = document.getElementById('canvas-game');
+        this.ctx = this.canvasGame.getContext('2d');
+        
+        const bgCanvas = document.getElementById('canvas-bg');
+        const fxCanvas = document.getElementById('canvas-fx');
+        
+        // Khởi tạo các Manager
+        this.audio = new GameApp.Audio();
+        this.particles = new GameApp.ParticleManager(bgCanvas.getContext('2d'), fxCanvas.getContext('2d'), window.innerWidth, window.innerHeight);
+        GameApp.UI.init();
+
+        // Biến trạng thái Game
+        this.level = 1;
+        this.graph = null;
+        this.path = [];        // Mảng chứa ID các node người chơi đã đi qua
+        this.startTime = 0;
+        this.elapsedTime = 0;
+        this.isPlaying = false;
+        this.isHinting = false;
+        
+        this.playerProfile = { name: '', avatar: '' };
+
+        // Events
+        window.addEventListener('resize', () => this.resize());
+        this.resize();
+        this.bindInput();
+
+        // Bắt đầu vòng lặp render
+        requestAnimationFrame(() => this.loop());
+    }
+
+    static resize() {
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        
+        document.querySelectorAll('canvas').forEach(c => {
+            c.width = w; c.height = h;
+        });
+        
+        this.particles.resize(w, h);
+        
+        // Nếu đang chơi mà resize thì tạo lại đồ thị để tránh lỗi tọa độ
+        if (this.isPlaying && this.graph) {
+            this.generateLevel();
+        }
+    }
+
+    static bindInput() {
+        const handleInteraction = (x, y) => {
+            if (!this.isPlaying) return;
+            
+            this.audio.resume(); // Kích hoạt Audio Context sau tương tác đầu tiên
+            this.particles.addClickFX(x, y);
+
+            // Kiểm tra click vào Node nào
+            const clickedNode = this.graph.nodes.find(n => GameApp.Utils.distance(n.x, n.y, x, y) < GameApp.Config.NODE_RADIUS * 2);
+            
+            if (clickedNode) {
+                this.handleNodeClick(clickedNode.id);
+            }
+        };
+
+        // Mouse
+        this.canvasGame.addEventListener('mousedown', (e) => handleInteraction(e.clientX, e.clientY));
+        
+        // Touch (Mobile)
+        this.canvasGame.addEventListener('touchstart', (e) => {
+            e.preventDefault(); // Ngăn cuộn trang
+            handleInteraction(e.touches[0].clientX, e.touches[0].clientY);
+        }, { passive: false });
+    }
+
+    static handleNodeClick(nodeId) {
+        const lastNodeId = this.path[this.path.length - 1];
+
+        // Trường hợp 1: Click vào node vừa đi -> Hủy bước đó (Undo)
+        if (lastNodeId === nodeId) {
+            this.undoMove();
+            return;
         }
 
-        function hideLeaderboard() { document.getElementById('lb-overlay').classList.add('hidden'); }
-
-        // --- VÒNG LẶP RENDER ---
-        function draw() {
-            ctx.fillStyle = var(--dark-bg);
-            ctx.fillRect(0, 0, width, height);
-
-            stars.forEach(s => { s.update(); s.draw(); });
-            shootingStars.forEach(s => { s.update(); s.draw(); });
-
-            // Vẽ cạnh
-            ctx.lineWidth = 2;
-            ctx.setLineDash([5, 5]);
-            ctx.strokeStyle = "rgba(255,255,255,0.1)";
-            graph.edges.forEach(e => {
-                const n1 = graph.nodes[e[0]];
-                const n2 = graph.nodes[e[1]];
-                ctx.beginPath();
-                ctx.moveTo(n1.x, n1.y);
-                ctx.lineTo(n2.x, n2.y);
-                ctx.stroke();
-            });
-            ctx.setLineDash([]);
-
-            // Vẽ đường đang đi
-            if(currentPath.length > 0) {
-                ctx.lineWidth = 6;
-                ctx.strokeStyle = var(--gold-primary);
-                ctx.shadowBlur = 15;
-                ctx.shadowColor = var(--gold-primary);
-                ctx.beginPath();
-                const start = graph.nodes[currentPath[0]];
-                ctx.moveTo(start.x, start.y);
-                for(let i=1; i<currentPath.length; i++) {
-                    const next = graph.nodes[currentPath[i]];
-                    ctx.lineTo(next.x, next.y);
-                }
-                ctx.stroke();
-                ctx.shadowBlur = 0;
-            }
-
-            // Vẽ điểm
-            graph.nodes.forEach(n => {
-                const isActive = currentPath.includes(n.id);
-                const isLast = currentPath[currentPath.length - 1] === n.id;
-                
-                ctx.beginPath();
-                ctx.arc(n.x, n.y, isLast ? 12 : 8, 0, Math.PI*2);
-                ctx.fillStyle = isActive ? var(--gold-primary) : "white";
-                if(isLast) {
-                    ctx.shadowBlur = 20;
-                    ctx.shadowColor = var(--gold-primary);
-                }
-                ctx.fill();
-                ctx.shadowBlur = 0;
-
-                // Vẽ Avatar tại điểm hiện tại
-                if(isLast && gameState === "PLAYING") {
-                    ctx.font = `30px ${GameApp ? 'var(--emoji-font)' : 'serif'}`; // Fallback font safety
-                    ctx.textAlign = "center";
-                    ctx.fillText(player.avatar, n.x, n.y - 30);
-                }
-            });
-
-            // Hiệu ứng hạt
-            for(let i = effects.length - 1; i >= 0; i--) {
-                let p = effects[i];
-                p.x += p.vx; p.y += p.vy;
-                p.life -= 0.02;
-                if(p.life <= 0) { effects.splice(i, 1); continue; }
-
-                ctx.save();
-                ctx.globalAlpha = p.life;
-                ctx.fillStyle = p.color;
-                if(p.isPaper) {
-                    ctx.translate(p.x, p.y);
-                    ctx.rotate(p.rot + p.life);
-                    ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size/2);
-                } else {
-                    ctx.beginPath();
-                    ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
-                    ctx.fill();
-                }
-                ctx.restore();
-            }
-
-            requestAnimationFrame(draw);
+        // Trường hợp 2: Node này đã đi qua rồi -> Không cho đi lại (tránh vòng lặp)
+        if (this.path.includes(nodeId)) {
+            GameApp.UI.setMascotMessage("Điểm này đi rồi nha!");
+            return;
         }
 
-        draw();
-    </script>
+        // Trường hợp 3: Điểm đầu tiên hoặc có đường nối hợp lệ
+        if (this.path.length === 0 || this.isValidEdge(lastNodeId, nodeId)) {
+            this.path.push(nodeId);
+            this.audio.playClick();
+            
+            // Cập nhật mascot random
+            const cheers = ["Hay quá!", "Đúng hướng rồi!", "Tiếp tục nào!", "Gần xong rồi!"];
+            GameApp.UI.setMascotMessage(cheers[Math.floor(Math.random() * cheers.length)]);
+
+            this.checkWin();
+        } else {
+             GameApp.UI.setMascotMessage("Không có đường nối đâu!");
+        }
+    }
+
+    static isValidEdge(id1, id2) {
+        return this.graph.edges.some(e => (e[0] === id1 && e[1] === id2) || (e[0] === id2 && e[1] === id1));
+    }
+
+    static undoMove() {
+        if (this.path.length > 0) {
+            this.path.pop();
+            this.audio.playUndo();
+            GameApp.UI.setMascotMessage("Đã lùi lại 1 bước!");
+        }
+    }
+
+    static restartLevel() {
+        this.path = [];
+        this.isHinting = false;
+        document.getElementById('btn-hint').innerText = "Gợi ý";
+        GameApp.UI.setMascotMessage("Làm lại từ đầu nào!");
+    }
+
+    static toggleHint() {
+        this.isHinting = !this.isHinting;
+        const btn = document.getElementById('btn-hint');
+        if (this.isHinting) {
+            btn.innerText = "Tắt gợi ý";
+            btn.style.background = "#e74c3c";
+            btn.style.boxShadow = "0 5px 0 #c0392b";
+            GameApp.UI.setMascotMessage("Nhìn đường gạch xanh mờ nhé!");
+        } else {
+            btn.innerText = "Gợi ý";
+            btn.style.background = "#3498db";
+            btn.style.boxShadow = "0 5px 0 #2980b9";
+            GameApp.UI.setMascotMessage("Tự thân vận động nào!");
+        }
+    }
+
+    static startGame() {
+        this.playerProfile.name = GameApp.UI.getPlayerName();
+        this.playerProfile.avatar = GameApp.UI.getSelectedAvatar();
+        this.audio.resume();
+        
+        GameApp.UI.hideModal('modal-start');
+        this.level = 1;
+        this.generateLevel();
+    }
+
+    static generateLevel() {
+        this.graph = new GameApp.Graph(this.level, this.canvasGame.width, this.canvasGame.height);
+        this.path = [];
+        this.isHinting = false;
+        document.getElementById('btn-hint').innerText = "Gợi ý";
+        
+        this.startTime = Date.now();
+        this.elapsedTime = 0;
+        this.isPlaying = true;
+        
+        GameApp.UI.updateHUD(this.level, 0);
+        GameApp.UI.setMascotMessage(`Bắt đầu màn ${this.level}!`);
+    }
+
+    static checkWin() {
+        if (this.path.length === this.graph.nodes.length) {
+            this.isPlaying = false;
+            this.audio.playWinChord();
+            this.particles.addWinFX();
+            
+            GameApp.UI.setMascotMessage("THẮNG RỒI!!! 🎉");
+            
+            // Lưu dữ liệu
+            GameApp.Storage.saveRecord({
+                name: this.playerProfile.name,
+                avatar: this.playerProfile.avatar,
+                level: this.level,
+                time: this.elapsedTime
+            });
+
+            setTimeout(() => {
+                GameApp.UI.showWinScreen(this.level, this.elapsedTime, this.playerProfile.avatar);
+            }, 1000); // Đợi 1 giây để xem pháo giấy
+        }
+    }
+
+    static nextLevel() {
+        GameApp.UI.hideModal('modal-win');
+        this.level++;
+        this.generateLevel();
+    }
+
+    /* --- PHẦN RENDER --- */
+    static draw() {
+        this.ctx.clearRect(0, 0, this.canvasGame.width, this.canvasGame.height);
+        if (!this.graph) return;
+
+        // Cập nhật logic vật lý của Node
+        this.graph.updateNodes();
+
+        // 1. Vẽ các cạnh nền (Mờ)
+        this.ctx.lineWidth = 2;
+        this.ctx.strokeStyle = GameApp.Config.COLORS.edgeDef;
+        this.ctx.lineCap = 'round';
+        this.ctx.lineJoin = 'round';
+        
+        this.ctx.beginPath();
+        this.graph.edges.forEach(e => {
+            const n1 = this.graph.nodes[e[0]];
+            const n2 = this.graph.nodes[e[1]];
+            this.ctx.moveTo(n1.x, n1.y);
+            this.ctx.lineTo(n2.x, n2.y);
+        });
+        this.ctx.stroke();
+
+        // 2. Vẽ gợi ý (Đường nối liền xanh mờ)
+        if (this.isHinting) {
+            this.ctx.lineWidth = 15;
+            this.ctx.strokeStyle = GameApp.Config.COLORS.hint;
+            this.ctx.beginPath();
+            this.graph.solution.forEach((nodeId, idx) => {
+                const n = this.graph.nodes[nodeId];
+                if (idx === 0) this.ctx.moveTo(n.x, n.y);
+                else this.ctx.lineTo(n.x, n.y);
+            });
+            this.ctx.stroke();
+        }
+
+        // 3. Vẽ đường người chơi đã đi
+        if (this.path.length > 1) {
+            this.ctx.lineWidth = 8;
+            this.ctx.strokeStyle = GameApp.Config.COLORS.edgeAct;
+            
+            // Thêm hiệu ứng phát sáng cho đường đi
+            this.ctx.shadowBlur = 10;
+            this.ctx.shadowColor = GameApp.Config.COLORS.edgeAct;
+
+            this.ctx.beginPath();
+            this.path.forEach((nodeId, idx) => {
+                const n = this.graph.nodes[nodeId];
+                if (idx === 0) this.ctx.moveTo(n.x, n.y);
+                else this.ctx.lineTo(n.x, n.y);
+            });
+            this.ctx.stroke();
+            
+            this.ctx.shadowBlur = 0; // Tắt glow
+        }
+
+        // 4. Vẽ các Node (Ngôi sao)
+        this.graph.nodes.forEach(n => {
+            const isVisited = this.path.includes(n.id);
+            const isCurrent = this.path[this.path.length - 1] === n.id;
+
+            this.ctx.fillStyle = isVisited ? GameApp.Config.COLORS.nodeAct : GameApp.Config.COLORS.nodeDef;
+            this.ctx.strokeStyle = isVisited ? GameApp.Config.COLORS.edgeAct : 'rgba(255,255,255,0.3)';
+            this.ctx.lineWidth = 4;
+
+            this.ctx.beginPath();
+            this.ctx.arc(n.x, n.y, isCurrent ? GameApp.Config.NODE_RADIUS * 1.3 : GameApp.Config.NODE_RADIUS, 0, Math.PI * 2);
+            this.ctx.fill();
+            this.ctx.stroke();
+
+            // Nếu là điểm hiện tại, vẽ Avatar của người chơi lên đó
+            if (isCurrent) {
+                this.ctx.font = "35px Arial";
+                this.ctx.textAlign = "center";
+                this.ctx.textBaseline = "middle";
+                this.ctx.fillText(this.playerProfile.avatar, n.x, n.y - 40); // Nổi lên trên node 1 chút
+            }
+        });
+    }
+
+    static loop() {
+        // Cập nhật hạt
+        this.particles.updateAndDraw();
+        
+        // Vẽ game
+        this.draw();
+
+        // Cập nhật Timer
+        if (this.isPlaying) {
+            const now = Date.now();
+            if (now - this.startTime >= 1000) {
+                this.elapsedTime = Math.floor((now - this.startTime) / 1000);
+                document.getElementById('ui-time').innerText = this.elapsedTime;
+            }
+        }
+
+        requestAnimationFrame(() => this.loop());
+    }
+};
+
+/* KHỞI ĐỘNG HỆ THỐNG KHI TẢI TRANG XONG */
+window.onload = () => {
+    GameApp.Engine.init();
+};
+
+</script>
 </body>
 </html>
