@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Starry Hamilton Ultimate</title>
+    <title>Starry Hamilton - Neon Confetti</title>
     <style>
         :root {
-            --bg: #fff9e1; --primary: #f1c40f; --accent: #e67e22; --text: #5d4037; --glass: rgba(255, 255, 255, 0.95);
+            --bg: #fff9e1; --primary: #f1c40f; --accent: #e67e22; --text: #5d4037;
         }
 
         body, html {
@@ -14,40 +14,33 @@
             background: var(--bg); font-family: 'Segoe UI', Tahoma, sans-serif; touch-action: none;
         }
 
-        #bg-canvas, #game-canvas { position: absolute; inset: 0; display: block; }
+        canvas { position: absolute; inset: 0; display: block; }
         #bg-canvas { z-index: -1; }
+        #game-canvas { z-index: 1; }
+        #confetti-canvas { z-index: 2500; pointer-events: none; }
 
         /* --- UI Screens --- */
         .screen {
-            position: fixed; inset: 0; z-index: 2000;
+            position: fixed; inset: 0; z-index: 3000;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             background: rgba(255, 249, 225, 0.98); padding: 20px; text-align: center;
         }
 
         .glass-box {
-            background: var(--glass); border-radius: 30px;
+            background: white; border-radius: 30px;
             border: 5px solid var(--primary); padding: 25px;
             box-shadow: 8px 8px 0px var(--accent); width: 90%; max-width: 400px;
         }
 
         /* --- Leaderboard Popup --- */
         #lb-popup {
-            position: fixed; inset: 0; z-index: 3000;
+            position: fixed; inset: 0; z-index: 4000;
             background: rgba(0,0,0,0.5); display: none;
             justify-content: center; align-items: center; backdrop-filter: blur(5px);
         }
         #lb-popup.active { display: flex; }
 
-        .lb-content {
-            max-height: 60vh; overflow-y: auto; margin: 15px 0;
-            scrollbar-width: thin; scrollbar-color: var(--primary) transparent;
-        }
-        .lb-item {
-            display: flex; align-items: center; gap: 10px; padding: 12px;
-            border-bottom: 2px dashed var(--primary); font-weight: bold; color: var(--text);
-        }
-
-        /* --- Responsive Controls --- */
+        /* --- Top Bar (Dọn sạch không gian) --- */
         .top-bar {
             position: fixed; top: 15px; width: 100%; display: flex;
             justify-content: space-around; align-items: center; pointer-events: none; z-index: 1000;
@@ -55,191 +48,159 @@
         .ui-pill {
             background: white; border: 3px solid var(--primary); padding: 8px 15px;
             border-radius: 20px; font-weight: bold; pointer-events: auto;
-            box-shadow: 4px 4px 0 var(--accent); font-size: clamp(0.8rem, 2.5vw, 1rem);
-            cursor: pointer;
+            box-shadow: 4px 4px 0 var(--accent); font-size: 0.9rem; cursor: pointer;
         }
 
-        #mascot-group {
-            position: fixed; bottom: 100px; right: 20px; z-index: 100;
-            display: flex; flex-direction: column; align-items: center;
-        }
-        .bubble {
-            background: white; border: 2px solid var(--primary); padding: 6px 12px;
-            border-radius: 15px; font-size: 0.8rem; margin-bottom: 8px; position: relative;
-            box-shadow: 2px 2px 0 var(--accent); animation: float 2s infinite ease-in-out;
-        }
-        #mascot { font-size: clamp(40px, 10vw, 60px); cursor: pointer; transition: 0.3s; }
-        
+        /* --- Bottom Bar --- */
         .bottom-bar {
             position: fixed; bottom: 20px; width: 100%; display: flex;
-            justify-content: center; gap: 10px; z-index: 1000; padding: 0 10px;
-        }
-
-        input {
-            width: 80%; padding: 12px; border-radius: 15px; border: 3px solid var(--primary);
-            margin: 15px 0; font-size: 1rem; text-align: center; outline: none;
+            justify-content: center; gap: 10px; z-index: 1000;
         }
 
         button {
             background: var(--accent); color: white; border: none; padding: 12px 20px;
             border-radius: 25px; font-weight: bold; cursor: pointer;
-            box-shadow: 0 4px 0 #a04000; transition: 0.1s; font-size: clamp(0.8rem, 2vw, 1rem);
+            box-shadow: 0 4px 0 #a04000; transition: 0.1s;
         }
         button:active { transform: translateY(3px); box-shadow: none; }
 
-        @keyframes float { 
-            0%, 100% { transform: translateY(0); } 
-            50% { transform: translateY(-5px); } 
+        input {
+            width: 80%; padding: 12px; border-radius: 15px; border: 3px solid var(--primary);
+            margin: 15px 0; font-size: 1rem; text-align: center; outline: none;
         }
-
-        /* Avatar Selection */
-        .avatar-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 15px 0; }
-        .avatar-opt {
-            font-size: 1.5rem; cursor: pointer; padding: 5px; border-radius: 10px;
-            border: 2px solid transparent; transition: 0.2s;
-        }
-        .avatar-opt.selected { border-color: var(--accent); background: #fffde7; transform: scale(1.2); }
     </style>
 </head>
 <body>
 
     <canvas id="bg-canvas"></canvas>
     <canvas id="game-canvas"></canvas>
+    <canvas id="confetti-canvas"></canvas>
 
-    <!-- Hướng dẫn (Tutorial) -->
-    <div id="tutorial-screen" class="screen">
+    <!-- Start Screen -->
+    <div id="start-screen" class="screen">
         <div class="glass-box">
-            <div style="font-size: 70px;">🐥</div>
-            <h2 style="color: var(--accent);">Chào bạn!</h2>
-            <p>Nhiệm vụ: Nối <b>tất cả</b> các ngôi sao mà <b>không được đi lặp lại</b> đường cũ nhé!</p>
-            <button onclick="UI.toProfile()">TỚ HIỂU RỒI!</button>
+            <h2 style="color: var(--accent);">Starry Hamilton</h2>
+            <p>Nối tất cả các điểm mà không lặp lại đường đi.</p>
+            <input type="text" id="user-name" placeholder="Tên của bạn..." maxlength="12">
+            <button onclick="game.start()">BẮT ĐẦU</button>
         </div>
     </div>
 
-    <!-- Chọn Profile -->
-    <div id="start-screen" class="screen" style="display: none;">
-        <div class="glass-box">
-            <h3>Chọn Avatar & Tên</h3>
-            <div class="avatar-grid" id="avatar-list"></div>
-            <input type="text" id="user-name" placeholder="Nhập tên bạn..." maxlength="12">
-            <button onclick="game.start()">VÀO CHƠI THÔI!</button>
-        </div>
-    </div>
-
-    <!-- Thanh trạng thái trên cùng -->
+    <!-- Top UI -->
     <div class="top-bar">
         <div class="ui-pill">LV: <span id="lvl">1</span></div>
         <div class="ui-pill" onclick="UI.toggleLB()">🏆 XẾP HẠNG</div>
         <div class="ui-pill">⏱️ <span id="timer">0</span>s</div>
     </div>
 
-    <!-- Leaderboard Popup -->
+    <!-- Leaderboard -->
     <div id="lb-popup" onclick="UI.toggleLB()">
         <div class="glass-box" onclick="event.stopPropagation()">
-            <h3 style="margin: 0;">🏆 BẢNG XẾP HẠNG</h3>
-            <div id="lb-content" class="lb-content"></div>
-            <button onclick="UI.toggleLB()" style="width: 100%;">QUAY LẠI GAME</button>
+            <h3 style="margin: 0 0 15px 0;">🏆 TOP CAO THỦ</h3>
+            <div id="lb-content" style="max-height: 200px; overflow-y: auto; text-align: left; margin-bottom: 15px;"></div>
+            <button onclick="UI.toggleLB()" style="width: 100%;">ĐÓNG</button>
         </div>
     </div>
 
-    <!-- Mascot & Lời thoại -->
-    <div id="mascot-group">
-        <div class="bubble" id="bubble">Cố lên bạn ơi!</div>
-        <div id="mascot">🐰</div>
-    </div>
-
-    <!-- Thanh điều khiển dưới cùng -->
+    <!-- Bottom Controls -->
     <div class="bottom-bar">
         <button onclick="game.undo()" style="background:#95a5a6; box-shadow: 0 4px 0 #7f8c8d;">Hoàn tác</button>
-        <button onclick="game.toggleHint()" id="hint-btn" style="background:#3498db; box-shadow: 0 4px 0 #2980b9;">Hiện đáp án</button>
+        <button onclick="game.toggleHint()" id="hint-btn" style="background:#3498db; box-shadow: 0 4px 0 #2980b9;">Gợi ý</button>
         <button onclick="game.resetLevel()" style="background:#e67e22;">Chơi lại</button>
     </div>
 
-    <!-- Màn hình thắng cuộc -->
+    <!-- Win Screen -->
     <div id="win-screen" class="screen" style="display: none;">
         <div class="glass-box">
-            <h1 style="color: var(--accent); margin: 0;">TUYỆT VỜI! 🎉</h1>
+            <h1 style="color: var(--accent); margin: 0;">XUẤT SẮC! 🎉</h1>
             <p id="win-msg" style="font-size: 1.2rem; margin: 20px 0;"></p>
             <button onclick="game.nextLevel()">MÀN TIẾP THEO</button>
         </div>
     </div>
 
 <script>
-/** 
- * ÂM THANH 
+/**
+ * ÂM THANH HIỆU ỨNG THẮNG
  */
 const Sound = {
     ctx: new (window.AudioContext || window.webkitAudioContext)(),
-    playChord() {
-        const freqs = [523.25, 659.25, 783.99, 1046.50];
-        freqs.forEach((f, i) => {
+    playWin() {
+        // Hợp âm thắng cuộc (C Major: C4, E4, G4, C5)
+        const notes = [261.63, 329.63, 392.00, 523.25];
+        notes.forEach((f, i) => {
             const o = this.ctx.createOscillator();
             const g = this.ctx.createGain();
+            o.type = 'triangle';
             o.connect(g); g.connect(this.ctx.destination);
-            o.frequency.setValueAtTime(f, this.ctx.currentTime + i*0.08);
-            g.gain.setValueAtTime(0.2, this.ctx.currentTime + i*0.08);
-            g.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + i*0.08 + 0.5);
-            o.start(this.ctx.currentTime + i*0.08); o.stop(this.ctx.currentTime + i*0.08 + 0.6);
+            o.frequency.setValueAtTime(f, this.ctx.currentTime + i * 0.1);
+            g.gain.setValueAtTime(0.3, this.ctx.currentTime + i * 0.1);
+            g.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + i * 0.1 + 0.8);
+            o.start(this.ctx.currentTime + i * 0.1);
+            o.stop(this.ctx.currentTime + i * 0.1 + 1);
         });
-    },
-    playClick() {
-        const o = this.ctx.createOscillator();
-        const g = this.ctx.createGain();
-        o.connect(g); g.connect(this.ctx.destination);
-        o.frequency.setValueAtTime(800, this.ctx.currentTime);
-        g.gain.setValueAtTime(0.1, this.ctx.currentTime);
-        g.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
-        o.start(); o.stop(this.ctx.currentTime + 0.1);
     }
 };
 
 /**
- * GIAO DIỆN
+ * HIỆU ỨNG PHÁO HOA
  */
+class Confetti {
+    constructor() {
+        this.canvas = document.getElementById('confetti-canvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.particles = [];
+        this.active = false;
+        window.addEventListener('resize', () => {
+            this.canvas.width = innerWidth; this.canvas.height = innerHeight;
+        });
+        this.canvas.width = innerWidth; this.canvas.height = innerHeight;
+    }
+    spawn() {
+        this.active = true;
+        this.particles = [];
+        for(let i=0; i<100; i++) {
+            this.particles.push({
+                x: innerWidth/2, y: innerHeight/2,
+                v: { x: (Math.random()-0.5)*15, y: (Math.random()-0.5)*15 },
+                s: Math.random()*10 + 5,
+                c: `hsl(${Math.random()*360}, 100%, 50%)`,
+                a: 1
+            });
+        }
+    }
+    update() {
+        if(!this.active) return;
+        this.ctx.clearRect(0, 0, innerWidth, innerHeight);
+        this.particles.forEach((p, i) => {
+            p.x += p.v.x; p.y += p.v.y; p.v.y += 0.2; // Trọng lực
+            p.a -= 0.01;
+            this.ctx.globalAlpha = p.a;
+            this.ctx.fillStyle = p.c;
+            this.ctx.fillRect(p.x, p.y, p.s, p.s);
+            if(p.a <= 0) this.particles.splice(i, 1);
+        });
+        if(this.particles.length === 0) this.active = false;
+    }
+}
+
 const UI = {
-    toProfile() {
-        document.getElementById('tutorial-screen').style.display = 'none';
-        document.getElementById('start-screen').style.display = 'flex';
-        const list = document.getElementById('avatar-list');
-        const avas = ['🐥','🐰','🐱','🐸','🐼','🐯','🦁','🦊'];
-        avas.forEach(a => {
-            const div = document.createElement('div');
-            div.className = 'avatar-opt' + (a==='🐥'?' selected':'');
-            div.innerText = a;
-            div.onclick = () => {
-                document.querySelectorAll('.avatar-opt').forEach(el => el.classList.remove('selected'));
-                div.classList.add('selected');
-                game.avatar = a;
-            };
-            list.appendChild(div);
-        });
-    },
-    toggleLB() { document.getElementById('lb-popup').classList.toggle('active'); },
-    updateMascot(txt) {
-        const b = document.getElementById('bubble');
-        b.innerText = txt;
-        document.getElementById('mascot').innerText = ['🐰','🐱','🐶','🐸','🦊'][Math.floor(Math.random()*5)];
-    }
+    toggleLB() { document.getElementById('lb-popup').classList.toggle('active'); }
 };
 
-/**
- * CORE GAME
- */
-class StarryGame {
+class HamiltonGame {
     constructor() {
         this.canvas = document.getElementById('game-canvas');
         this.ctx = this.canvas.getContext('2d');
         this.bgCanvas = document.getElementById('bg-canvas');
         this.bgCtx = this.bgCanvas.getContext('2d');
+        this.confetti = new Confetti();
         
         this.level = 1; this.nodes = []; this.edges = []; this.path = []; this.solution = [];
-        this.bgStars = []; this.isWon = false; this.isHinting = false;
-        this.avatar = '🐥'; this.name = ''; this.startTime = 0;
-        this.records = JSON.parse(localStorage.getItem('hamilton_global_v5')) || [];
+        this.isWon = false; this.isHinting = false; this.startTime = 0;
+        this.records = JSON.parse(localStorage.getItem('hamilton_pro_v6')) || [];
 
         window.addEventListener('resize', () => this.resize());
         this.resize();
-        this.initBg();
         this.addListeners();
         this.loop();
     }
@@ -247,14 +208,6 @@ class StarryGame {
     resize() {
         this.canvas.width = this.bgCanvas.width = window.innerWidth;
         this.canvas.height = this.bgCanvas.height = window.innerHeight;
-        if(this.nodes.length > 0) this.generate(); // Re-center nodes
-    }
-
-    initBg() {
-        for(let i=0; i<40; i++) this.bgStars.push({
-            x: Math.random()*innerWidth, y: Math.random()*innerHeight,
-            s: Math.random()*15+5, v: Math.random()*0.2+0.1, p: Math.random()*10
-        });
     }
 
     addListeners() {
@@ -269,62 +222,49 @@ class StarryGame {
     }
 
     start() {
-        this.name = document.getElementById('user-name').value.trim() || "Người chơi";
+        this.userName = document.getElementById('user-name').value || "Ẩn danh";
         document.getElementById('start-screen').style.display = 'none';
         this.generate();
-        this.updateLB();
     }
 
     generate() {
-        this.nodes = []; this.edges = []; this.path = []; this.isWon = false; this.isHinting = false;
+        this.nodes = []; this.edges = []; this.path = []; this.isWon = false;
         this.startTime = Date.now();
         document.getElementById('lvl').innerText = this.level;
         document.getElementById('win-screen').style.display = 'none';
-        document.getElementById('hint-btn').innerText = "Hiện đáp án";
 
         const count = this.level + 3;
-        const margin = 70;
+        const margin = 80;
 
-        // Bố trí các điểm thông minh (tránh sát nhau và sát rìa)
         for(let i=0; i<count; i++) {
             let x, y, tooClose;
-            let attempts = 0;
             do {
                 x = margin + Math.random() * (innerWidth - margin*2);
-                y = 100 + Math.random() * (innerHeight - 250);
-                tooClose = this.nodes.some(n => Math.hypot(n.x - x, n.y - y) < 110);
-                attempts++;
-            } while(tooClose && attempts < 100);
-            this.nodes.push({id: i, x, y, baseY: y, offset: Math.random()*100});
+                y = 120 + Math.random() * (innerHeight - 250);
+                tooClose = this.nodes.some(n => Math.hypot(n.x - x, n.y - y) < 120);
+            } while(tooClose);
+            this.nodes.push({id: i, x, y});
         }
 
-        // Tạo lời giải Hamilton (Đường đi đúng duy nhất)
         this.solution = [...Array(count).keys()].sort(() => Math.random() - 0.5);
         for(let i=0; i<count-1; i++) this.edges.push([this.solution[i], this.solution[i+1]]);
-
-        // Thêm cạnh nhiễu (Làm rối mắt người chơi)
-        const noise = Math.floor(count * (0.6 + this.level/5));
-        for(let i=0; i<noise; i++) {
+        
+        const extra = Math.floor(count * 0.5);
+        for(let i=0; i<extra; i++) {
             const a = Math.floor(Math.random()*count), b = Math.floor(Math.random()*count);
-            if(a !== b && !this.edges.some(e => e.includes(a) && e.includes(b))) {
-                this.edges.push([a, b]);
-            }
+            if(a !== b && !this.edges.some(e => e.includes(a) && e.includes(b))) this.edges.push([a, b]);
         }
     }
 
     checkClick(ix, iy) {
         this.nodes.forEach(n => {
-            if(Math.hypot(n.x - ix, n.y - iy) < 45) {
+            if(Math.hypot(n.x - ix, n.y - iy) < 40) {
                 const last = this.path[this.path.length-1];
                 if(this.path.includes(n.id)) {
-                    if(last === n.id) { this.path.pop(); Sound.playClick(); }
-                } else {
-                    if(this.path.length === 0 || this.edges.some(e => e.includes(last) && e.includes(n.id))) {
-                        this.path.push(n.id);
-                        Sound.playClick();
-                        UI.updateMascot(["Giỏi quá!", "Tiếp tục nào!", "Sắp xong rồi!", "Tuyệt đỉnh!"][Math.floor(Math.random()*4)]);
-                        if(this.path.length === this.nodes.length) this.win();
-                    }
+                    if(last === n.id) this.path.pop();
+                } else if(this.path.length === 0 || this.edges.some(e => e.includes(last) && e.includes(n.id))) {
+                    this.path.push(n.id);
+                    if(this.path.length === this.nodes.length) this.win();
                 }
             }
         });
@@ -333,54 +273,34 @@ class StarryGame {
     win() {
         this.isWon = true;
         const time = Math.floor((Date.now() - this.startTime)/1000);
-        Sound.playChord();
+        Sound.playWin();
+        this.confetti.spawn();
         
-        // Lưu bảng xếp hạng
-        this.records.push({name: this.name, avatar: this.avatar, time, level: this.level, date: new Date().toLocaleDateString()});
+        this.records.push({name: this.userName, time, level: this.level});
         this.records.sort((a,b) => b.level - a.level || a.time - b.time);
-        localStorage.setItem('hamilton_global_v5', JSON.stringify(this.records.slice(0, 15)));
+        localStorage.setItem('hamilton_pro_v6', JSON.stringify(this.records.slice(0, 10)));
         
-        document.getElementById('win-msg').innerText = `Màn ${this.level} - Thời gian: ${time} giây`;
+        document.getElementById('win-msg').innerText = `Màn ${this.level} trong ${time}s!`;
         document.getElementById('win-screen').style.display = 'flex';
         this.updateLB();
     }
 
     updateLB() {
-        const today = new Date().toLocaleDateString();
         const content = document.getElementById('lb-content');
-        const daily = this.records.filter(r => r.date === today);
-        content.innerHTML = daily.length ? daily.map((r, i) => `
-            <div class="lb-item">
-                <span>${i+1}. ${r.avatar} ${r.name}</span>
-                <span style="margin-left:auto">LV${r.level} - ${r.time}s</span>
-            </div>
-        `).join('') : "<p>Hôm nay chưa có ai nè, hãy là người đầu tiên!</p>";
+        content.innerHTML = this.records.map((r, i) => `<div>${i+1}. ${r.name} - LV${r.level} (${r.time}s)</div>`).join('');
     }
 
-    toggleHint() {
-        this.isHinting = !this.isHinting;
-        document.getElementById('hint-btn').innerText = this.isHinting ? "Ẩn đáp án" : "Hiện đáp án";
-    }
-
-    undo() { this.path.pop(); Sound.playClick(); }
-    resetLevel() { this.path = []; this.startTime = Date.now(); this.isHinting = false; }
+    toggleHint() { this.isHinting = !this.isHinting; }
+    undo() { this.path.pop(); }
+    resetLevel() { this.path = []; this.isHinting = false; }
     nextLevel() { this.level++; this.generate(); }
 
     loop() {
-        // Nền trôi bồng bềnh
-        this.bgCtx.clearRect(0,0,innerWidth, innerHeight);
-        this.bgStars.forEach(s => {
-            this.bgCtx.font = `${s.s}px serif`;
-            this.bgCtx.fillText("⭐", s.x, s.y);
-            s.y += s.v; s.x += Math.sin(Date.now()*0.001 + s.p)*0.2;
-            if(s.y > innerHeight) s.y = -20;
-        });
-
-        // Vẽ Game
-        this.ctx.clearRect(0,0,innerWidth, innerHeight);
+        this.bgCtx.clearRect(0, 0, innerWidth, innerHeight);
+        this.ctx.clearRect(0, 0, innerWidth, innerHeight);
         
         // Vẽ cạnh mờ
-        this.ctx.strokeStyle = '#d7ccc8'; this.ctx.lineWidth = 2;
+        this.ctx.strokeStyle = 'rgba(120, 120, 120, 0.2)'; this.ctx.lineWidth = 2;
         this.edges.forEach(e => {
             this.ctx.beginPath();
             this.ctx.moveTo(this.nodes[e[0]].x, this.nodes[e[0]].y);
@@ -388,60 +308,34 @@ class StarryGame {
             this.ctx.stroke();
         });
 
-        // Vẽ đáp án (nếu bật)
-        if(this.isHinting) {
-            this.ctx.strokeStyle = 'rgba(52, 152, 219, 0.4)'; this.ctx.lineWidth = 12; this.ctx.lineCap = 'round';
-            this.ctx.beginPath();
-            this.solution.forEach((id, i) => {
-                const n = this.nodes[id];
-                if(i===0) this.ctx.moveTo(n.x, n.y); else this.ctx.lineTo(n.x, n.y);
-            });
-            this.ctx.stroke();
-        }
-
-        // Vẽ đường người chơi đi
+        // Vẽ đường đi
         if(this.path.length > 1) {
-            this.ctx.strokeStyle = '#f39c12'; this.ctx.lineWidth = 10; this.ctx.lineCap = 'round';
-            this.ctx.shadowBlur = 10; this.ctx.shadowColor = '#f39c12';
+            this.ctx.strokeStyle = '#e67e22'; this.ctx.lineWidth = 6; this.ctx.lineCap = 'round';
             this.ctx.beginPath();
             this.path.forEach((id, i) => {
                 const n = this.nodes[id];
                 if(i===0) this.ctx.moveTo(n.x, n.y); else this.ctx.lineTo(n.x, n.y);
             });
             this.ctx.stroke();
-            this.ctx.shadowBlur = 0;
         }
 
         // Vẽ các trạm (ngôi sao)
         this.nodes.forEach(n => {
             const active = this.path.includes(n.id);
-            const isLast = this.path[this.path.length-1] === n.id;
-            
-            // Hiệu ứng nhấp nhô
-            n.y = n.baseY + Math.sin(Date.now()*0.002 + n.offset)*5;
-
-            this.ctx.fillStyle = active ? '#f39c12' : '#fff';
-            this.ctx.strokeStyle = '#f39c12'; this.ctx.lineWidth = 4;
+            this.ctx.fillStyle = active ? '#f1c40f' : '#fff';
+            this.ctx.strokeStyle = '#e67e22'; this.ctx.lineWidth = 3;
             this.ctx.beginPath();
-            this.ctx.arc(n.x, n.y, isLast ? 22 : 18, 0, Math.PI*2);
+            this.ctx.arc(n.x, n.y, 20, 0, Math.PI*2);
             this.ctx.fill(); this.ctx.stroke();
-            
-            if(active) {
-                this.ctx.fillStyle = "white"; this.ctx.font = "16px serif";
-                this.ctx.fillText("✨", n.x-10, n.y+5);
-            }
         });
 
-        // Update Timer
-        if(!this.isWon && this.startTime > 0) {
-            document.getElementById('timer').innerText = Math.floor((Date.now() - this.startTime)/1000);
-        }
-
+        if(!this.isWon) document.getElementById('timer').innerText = Math.floor((Date.now() - this.startTime)/1000);
+        this.confetti.update();
         requestAnimationFrame(() => this.loop());
     }
 }
 
-const game = new StarryGame();
+const game = new HamiltonGame();
 </script>
 </body>
 </html>
