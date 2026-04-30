@@ -1,496 +1,312 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Hamilton Cozy Game - Super Upgrade</title>
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+<title>Hamilton Game</title>
+
 <style>
-  body {
-    margin: 0;
-    background: linear-gradient(180deg, #f6e6c9 0%, #f0dcc0 100%);
-    color: #5a3e2b;
-    font-family: "Nunito", sans-serif;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    min-height: 100vh;
-  }
-  h1 {
-    margin: 20px 0;
-    color: #c47a2c;
-    text-shadow: 2px 2px 2px rgba(0,0,0,0.1);
-  }
-  #setup, #game {
-    width: 100%;
-    max-width: 600px;
-    text-align: center;
-  }
-  #setup input, #setup button {
-    font-size: 16px;
-    padding: 10px;
-    margin: 5px;
-  }
-  #setup input {
-    width: calc(100% - 40px);
-    max-width: 300px;
-    border: 2px solid #c47a2c;
-    border-radius: 8px;
-  }
-  #avatars {
-    margin: 10px 0;
-  }
-  .avatar {
-    font-size: 30px;
-    margin: 5px;
-    cursor: pointer;
-    transition: transform 0.2s;
-  }
-  .avatar:hover {
-    transform: scale(1.2);
-  }
-  .selected {
-    outline: 2px solid #c47a2c;
-    border-radius: 50%;
-    padding: 3px;
-  }
-  #game {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-  #info {
-    font-style: italic;
-    margin-bottom: 10px;
-  }
-  canvas {
-    width: 100%;
-    max-width: 600px;
-    aspect-ratio: 6/5;
-    background: #fff8ec;
-    border-radius: 16px;
-    border: 2px solid #e0c097;
-    box-shadow: 4px 4px 10px rgba(0,0,0,0.2);
-    cursor: pointer;
-  }
-  button {
-    margin: 5px;
-    padding: 10px 15px;
-    background: #ffb84c;
-    color: #5a3e2b;
-    font-weight: bold;
-    border: none;
-    border-radius: 8px;
-    box-shadow: 2px 2px 6px rgba(0,0,0,0.15);
-    cursor: pointer;
-    transition: background 0.3s, transform 0.2s;
-  }
-  button:hover {
-    background: #ffcb6b;
-    transform: translateY(-2px);
-  }
-  button:active {
-    background: #ffb84c;
-    transform: translateY(0px);
-  }
-  #scores {
-    list-style: none;
-    padding: 0;
-    margin-top: 10px;
-  }
-  #scores li {
-    margin: 5px 0;
-    padding: 5px;
-    background: #fff;
-    border-radius: 4px;
-    box-shadow: 1px 1px 3px rgba(0,0,0,0.1);
-  }
-  #winScreen {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.6);
-    color: #fff;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-    text-align: center;
-    padding: 20px;
-  }
-  #winScreen.hidden { display: none; }
-  #winScreen button {
-    margin-top: 20px;
-  }
-  .hidden { display: none; }
-  /* End of CSS style rules */
-  /* */
-  /* */
-  /* */
-  /* */
-  /* */
-  /* */
-  /* */
-  /* */
-  /* */
+body{
+  margin:0;
+  overflow:hidden;
+  background: radial-gradient(circle,#0b0b2a,#000);
+  color:white;
+  text-align:center;
+  font-family:sans-serif;
+}
+
+h1{
+  color:#caa6ff;
+  text-shadow:0 0 20px #caa6ff;
+}
+
+/* CANVAS */
+canvas{
+  display:block;
+  margin:auto;
+  border-radius:12px;
+  box-shadow:0 0 40px rgba(150,100,255,0.3);
+}
+
+/* BUTTON */
+button{
+  padding:10px 15px;
+  margin:5px;
+  border:none;
+  border-radius:8px;
+  background:#caa6ff;
+  cursor:pointer;
+}
+
+/* WIN POPUP */
+#winBox{
+  position:fixed;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%) scale(0);
+  background:rgba(0,0,0,0.8);
+  padding:30px;
+  border-radius:16px;
+  box-shadow:0 0 40px #caa6ff;
+  transition:0.3s;
+}
+
+#winBox.show{
+  transform:translate(-50%,-50%) scale(1);
+}
+
 </style>
 </head>
+
 <body>
-<!-- Game Setup and container -->
-<!-- Player enters name and selects avatar -->
-<div id="setup">
-  <input id="username" placeholder="Enter name">
-  <div id="avatars"></div>
-  <button onclick="startGame()">Start Game</button>
+
+<h1>🌙 Hamilton Game</h1>
+
+Level: <span id="level">1</span> |
+Time: <span id="time">0</span>s
+<br>
+
+<button onclick="undo()">Undo</button>
+<button onclick="restart()">Restart</button>
+
+<canvas id="game" width="500" height="500"></canvas>
+
+<!-- WIN UI -->
+<div id="winBox">
+  <h2>✨ You Win!</h2>
+  <p id="timeResult"></p>
+  <button onclick="nextLevel()">Next Level</button>
 </div>
-<!-- Main game interface: puzzle, buttons, leaderboard -->
-<div id="game" class="hidden">
-  <p id="info">Level: <span id="levelNumber">1</span></p>
-  <canvas id="canvas"></canvas>
-  <br>
-  <button onclick="undo()">Undo</button>
-  <button onclick="resetGame()">Restart</button>
-  <button onclick="showSolution()">Show Hint</button>
-  <button onclick="checkImpossible()">Check Impossible</button>
-  <button onclick="toggleSound()">🔊 Toggle Sound</button>
-  <button onclick="toggleMusic()">🎵 Toggle Music</button>
-  <audio id="bgMusic" loop>
-    <source src="https://cdn.pixabay.com/download/audio/2023/05/08/audio_8ce13dd5f4.mp3" type="audio/mpeg">
-    <!-- Ví dụ nhạc nền CC0 từ Pixabay -->
-  </audio>
-  <h3>🏆 Daily Leaderboard</h3>
-  <ul id="scores"></ul>
-</div>
-<!-- Victory overlay screen -->
-<div id="winScreen" class="hidden"></div>
 
 <script>
-/* === Game Script === */
-// Emoji avatars for player selection
-const clickSound = new Audio("https://actions.google.com/sounds/v1/ui/led_highlight.ogg");
-const winSound = new Audio("https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg");
-const errorSound = new Audio("https://actions.google.com/sounds/v1/cartoon/wood_stacking.ogg");
-const successSound = new Audio("https://actions.google.com/sounds/v1/cartoon/concussive_hit_guitar_boing.ogg");
-let soundEnabled = true;
-let musicEnabled = false;
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
 
-function toggleSound() { soundEnabled = !soundEnabled; }
-function toggleMusic() {
-  const bgMusic = document.getElementById("bgMusic");
-  musicEnabled = !musicEnabled;
-  if (musicEnabled) { bgMusic.volume = 0.5; bgMusic.play(); }
-  else { bgMusic.pause(); }
+let graph,path=[],level=1;
+let startTime, timerInterval;
+
+/* ===== TIMER ===== */
+function startTimer(){
+  startTime=Date.now();
+  clearInterval(timerInterval);
+  timerInterval=setInterval(()=>{
+    let t=Math.floor((Date.now()-startTime)/1000);
+    document.getElementById("time").innerText=t;
+  },200);
 }
 
-let player = {};
-let usedHint = false;
-let level = 1;
-const avatars = ["🐻","🐰","🦊","🐱","🐶","🐼","🦌","🐸"];
-let selected = null;
-// Emoji avatars for player selection
-avatars.forEach(a => {
-  let el = document.createElement("span");
-  el.innerText = a;
-  el.className = "avatar";
-  el.onclick = () => {
-    document.querySelectorAll(".avatar").forEach(x => x.classList.remove("selected"));
-    el.classList.add("selected");
-    selected = a;
-    if(soundEnabled) clickSound.play();
-  };
-  document.getElementById("avatars").appendChild(el);
-});
-
-function startGame() {
-  // Initialize the game with player info
-  let name = document.getElementById("username").value;
-  if(!name || !selected) { alert("Vui lòng nhập tên và chọn biểu tượng!"); return; }
-  player = { name: name, avatar: selected };
-  document.getElementById("setup").classList.add("hidden");
-  document.getElementById("game").classList.remove("hidden");
-  level = 1;
-  initGame();
+/* ===== STAR BG ===== */
+let stars=[];
+for(let i=0;i<100;i++){
+  stars.push({x:Math.random()*500,y:Math.random()*500,a:Math.random()});
 }
 
-/* GRAPH class: random graph generator for the puzzle */
-class Graph {
-  constructor(n) {
-    this.nodes = [];
-    this.edges = {};
-    const MIN_DIST = 0.15;
-
-function isFarEnough(nodes, x, y) {
-  return nodes.every(node => {
-    let dx = node.x - x;
-    let dy = node.y - y;
-    return Math.hypot(dx, dy) > MIN_DIST;
+/* ===== SHOOTING STAR ===== */
+let meteors=[];
+function spawnMeteor(){
+  meteors.push({
+    x:Math.random()*500,
+    y:0,
+    vx:4+Math.random()*2,
+    vy:4+Math.random()*2,
+    life:1
   });
 }
 
-for (let i = 0; i < n; i++) {
-  let x, y;
-  let attempts = 0;
+/* ===== GRAPH ===== */
+class Graph{
+  constructor(n){
+    this.nodes=[];
+    this.edges={};
 
-  do {
-    x = 0.1 + Math.random() * 0.8;
-    y = 0.1 + Math.random() * 0.8;
-    attempts++;
-  } while (!isFarEnough(this.nodes, x, y) && attempts < 100);
+    const MIN=0.18;
 
-  this.nodes.push({ id: i, x, y });
-  this.edges[i] = [];
-}
+    for(let i=0;i<n;i++){
+      let x,y,tries=0;
+      do{
+        x=0.1+Math.random()*0.8;
+        y=0.1+Math.random()*0.8;
+        tries++;
+      }while(!this.ok(x,y,MIN)&&tries<100);
+
+      this.nodes.push({
+        id:i,x,y,
+        color:`hsl(${Math.random()*360},100%,70%)`
+      });
+
+      this.edges[i]=[];
     }
-    // Ensure connectivity
-    for(let i=0; i<n-1; i++){ this.connect(i, i+1); }
-    // Add random edges
-    for(let i=0; i<n; i++){
-      for(let j=i+2; j<n; j++){
-        if(Math.random() < 0.3) this.connect(i, j);
+
+    for(let i=0;i<n-1;i++) this.link(i,i+1);
+
+    for(let i=0;i<n;i++){
+      for(let j=i+2;j<n;j++){
+        if(Math.random()<0.3) this.link(i,j);
       }
     }
   }
-  connect(a, b) {
-    // Connect two nodes bidirectionally
+
+  ok(x,y,min){
+    return this.nodes.every(n=>{
+      return Math.hypot(n.x-x,n.y-y)>min;
+    });
+  }
+
+  link(a,b){
     this.edges[a].push(b);
     this.edges[b].push(a);
   }
-  isConnected(a, b) {
+
+  isConnected(a,b){
     return this.edges[a].includes(b);
   }
 }
 
-/* ENGINE class: handle user path and moves */
-class Engine {
-  constructor(graph) { this.graph = graph; this.path = []; }
-  move(to) {
-    // Attempt to move to a node; play sound on success or error
-    if(this.path.length === 0){
-      this.path.push(to);
-      if(soundEnabled) clickSound.play();
-      return;
+/* ===== DRAW ===== */
+function draw(){
+  ctx.clearRect(0,0,500,500);
+
+  // stars
+  stars.forEach(s=>{
+    ctx.fillStyle=`rgba(255,255,255,${s.a})`;
+    ctx.fillRect(s.x,s.y,2,2);
+    s.a+= (Math.random()-0.5)*0.02;
+  });
+
+  // meteors
+  meteors.forEach(m=>{
+    ctx.strokeStyle="white";
+    ctx.beginPath();
+    ctx.moveTo(m.x,m.y);
+    ctx.lineTo(m.x-20,m.y-20);
+    ctx.stroke();
+
+    m.x+=m.vx;
+    m.y+=m.vy;
+    m.life-=0.02;
+  });
+
+  meteors=meteors.filter(m=>m.life>0);
+  if(Math.random()<0.01) spawnMeteor();
+
+  // edges
+  for(let a in graph.edges){
+    for(let b of graph.edges[a]){
+      let A=graph.nodes[a],B=graph.nodes[b];
+      ctx.strokeStyle="rgba(255,255,255,0.1)";
+      ctx.beginPath();
+      ctx.moveTo(A.x*500,A.y*500);
+      ctx.lineTo(B.x*500,B.y*500);
+      ctx.stroke();
     }
-    let last = this.path[this.path.length-1];
-    if(!this.graph.isConnected(last, to) || this.path.includes(to)) {
-      if(soundEnabled) errorSound.play();
-      return;
-    }
-    this.path.push(to);
-    if(soundEnabled) successSound.play();
   }
-  undo() {
-    // Undo last move
-    this.path.pop();
+
+  // path
+  ctx.lineWidth=4;
+  ctx.shadowBlur=20;
+
+  for(let i=0;i<path.length-1;i++){
+    let A=graph.nodes[path[i]];
+    let B=graph.nodes[path[i+1]];
+    ctx.strokeStyle=A.color;
+    ctx.shadowColor=A.color;
+
+    ctx.beginPath();
+    ctx.moveTo(A.x*500,A.y*500);
+    ctx.lineTo(B.x*500,B.y*500);
+    ctx.stroke();
   }
-  complete() {
-    // Check if the puzzle is complete
-    return this.path.length === this.graph.nodes.length;
-  }
+
+  ctx.shadowBlur=0;
+
+  // nodes
+  graph.nodes.forEach(n=>{
+    ctx.beginPath();
+    ctx.arc(n.x*500,n.y*500,10,0,Math.PI*2);
+
+    ctx.fillStyle=path.includes(n.id)?n.color:"#fff";
+    ctx.shadowBlur=15;
+    ctx.shadowColor=n.color;
+    ctx.fill();
+    ctx.shadowBlur=0;
+  });
 }
 
-let canvas = document.getElementById("canvas");
-let ctx = canvas.getContext("2d");
-let graph, engine, solution;
-let startTime;
-
-window.addEventListener("resize", resize);
-function resize(){
-  let r = canvas.getBoundingClientRect();
-  canvas.width = r.width;
-  canvas.height = r.height;
-}
-
-/* Initialize or reset the game (new level) */
-function initGame(){
-  resize();
-  let nodeCount = 6 + (level - 1) * 2;
-  if(nodeCount > 14) nodeCount = 14;
-  graph = new Graph(nodeCount);
-  engine = new Engine(graph);
-  solution = findSolution(graph);
-  startTime = Date.now();
-  usedHint = false;
-  document.getElementById("levelNumber").innerText = level;
+/* ===== LOOP ===== */
+function loop(){
   draw();
+  requestAnimationFrame(loop);
 }
 
-/* Depth-First Search to find a Hamiltonian path solution if one exists */
-function findSolution(graph){
-  let n = graph.nodes.length;
-  function dfs(node, visited, path){
-    if(path.length === n) return path;
-    for(let next of graph.edges[node]){
-      if(!visited.has(next)){
-        visited.add(next);
-        let res = dfs(next, visited, [...path, next]);
-        if(res) return res;
-        visited.delete(next);
+/* ===== CLICK ===== */
+canvas.onclick=e=>{
+  let rect=canvas.getBoundingClientRect();
+  let x=(e.clientX-rect.left)/rect.width;
+  let y=(e.clientY-rect.top)/rect.height;
+
+  let nearest=null,min=0.05;
+
+  graph.nodes.forEach(n=>{
+    let d=Math.hypot(n.x-x,n.y-y);
+    if(d<min){min=d;nearest=n.id;}
+  });
+
+  if(nearest==null) return;
+
+  if(path.length==0 || graph.isConnected(path[path.length-1],nearest)){
+    if(!path.includes(nearest)){
+      path.push(nearest);
+
+      if(path.length===graph.nodes.length){
+        win();
       }
     }
-    return null;
   }
-  for(let i=0; i<n; i++){
-    let visited = new Set([i]);
-    let res = dfs(i, visited, [i]);
-    if(res) return res;
-  }
-  return null;
+};
+
+/* ===== WIN ===== */
+function win(){
+  clearInterval(timerInterval);
+
+  let timeUsed=Math.floor((Date.now()-startTime)/1000);
+
+  document.getElementById("timeResult").innerText =
+    "Completed in "+timeUsed+" seconds";
+
+  document.getElementById("winBox").classList.add("show");
+
+  saveScore(timeUsed);
 }
 
-/* Draw the graph, edges, path, and check for completion */
-function draw(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  // Draw all edges (background)
-  graph.nodes.forEach(n => {
-    graph.edges[n.id].forEach(to => {
-      let t = graph.nodes[to];
-      ctx.strokeStyle = "#cdb38b";
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(n.x * canvas.width, n.y * canvas.height);
-      ctx.lineTo(t.x * canvas.width, t.y * canvas.height);
-      ctx.stroke();
-    });
-  });
-  // Draw path so far
-  ctx.strokeStyle = "#ff7f50";
-  ctx.lineWidth = 4;
-  for(let i=0; i<engine.path.length-1; i++){
-    let a = graph.nodes[engine.path[i]];
-    let b = graph.nodes[engine.path[i+1]];
-    ctx.beginPath();
-    ctx.moveTo(a.x * canvas.width, a.y * canvas.height);
-    ctx.lineTo(b.x * canvas.width, b.y * canvas.height);
-    ctx.stroke();
-  }
-  // Draw nodes
-  graph.nodes.forEach(n => {
-    let nx = n.x * canvas.width, ny = n.y * canvas.height;
-    ctx.beginPath();
-    ctx.arc(nx, ny, 16, 0, Math.PI*2);
-    ctx.fillStyle = engine.path.includes(n.id) ? "#ffa07a" : "#8fd19e";
-    ctx.fill();
-    ctx.strokeStyle = "#fff";
-    ctx.lineWidth = 2;
-    ctx.stroke();
-  });
-  // Check win
-  if(engine.complete()){
-    let timeSec = Math.floor((Date.now() - startTime)/1000);
-    if(!usedHint){
-      if(soundEnabled) winSound.play();
-      saveScore(timeSec);
-    }
-    showWinScreen(timeSec, !usedHint);
-  }
+/* ===== SAVE ===== */
+function saveScore(t){
+  let data=JSON.parse(localStorage.getItem("scores")||"[]");
+  data.push({level,time:t});
+  localStorage.setItem("scores",JSON.stringify(data));
 }
 
-// Handle user clicks on the canvas
-canvas.addEventListener("pointerdown", e => {
-  let r = canvas.getBoundingClientRect();
-  let x = e.clientX - r.left, y = e.clientY - r.top;
-  graph.nodes.forEach(n => {
-    let nx = n.x * canvas.width, ny = n.y * canvas.height;
-    if(Math.hypot(nx-x, ny-y) < 16){
-      engine.move(n.id);
-      draw();
-    }
-  });
-});
-
-function undo(){
-  // Undo last move (function exposed to UI)
-  engine.undo(); draw();
-}
-function resetGame(){
-  // Reset the current level
-  initGame();
-}
-function showSolution(){
-  // Show the solution path if exists (hint)
-  if(solution){
-    engine.path = [...solution];
-    usedHint = true;
-    draw();
-  }
-}
-function checkImpossible(){
-  // Check if no solution exists for current puzzle
-  if(!solution) alert("Đúng, map này không có lời giải");
-  else alert("Sai, map này có lời giải");
-}
-
-function showWinScreen(timeSec, scored) {
-  // Display win overlay with stats and next button
-  canvas.style.pointerEvents = "none";
-  let screen = document.getElementById("winScreen");
-  screen.innerHTML = `
-    ${player.avatar} <br><strong>${player.name}</strong><br>
-    ${scored ? "You Win! 🏆" : "Solved!"}<br>
-    ${scored ? ("Time: " + timeSec + "s") : "(No score for hint)"}<br>
-    <button onclick="nextLevel()">Next Level</button>
-  `;
-  screen.classList.remove("hidden");
-}
-
-function nextLevel() {
-  // Proceed to next level, hide overlay, and init new game
-  document.getElementById("winScreen").classList.add("hidden");
-  canvas.style.pointerEvents = "";
+/* ===== NEXT LEVEL ===== */
+function nextLevel(){
+  document.getElementById("winBox").classList.remove("show");
   level++;
-  initGame();
+  start();
 }
 
-/* LOCAL LEADERBOARD */
-// Save score in localStorage with today's date
-function saveScore(time){
-  let today = new Date().toISOString().slice(0,10);
-  let scores = JSON.parse(localStorage.getItem("scores") || "[]");
-  scores.push({ name: player.name, avatar: player.avatar, time: time, date: today, level: level });
-  scores = scores.filter(s => s.date === today);
-  // Sort by time and keep top 10
-  scores.sort((a,b) => a.time - b.time);
-  scores = scores.slice(0,10);
-  localStorage.setItem("scores", JSON.stringify(scores));
-  renderLeaderboard();
-}
-// Render leaderboard list from stored scores
-function renderLeaderboard(){
-  let list = document.getElementById("scores");
-  list.innerHTML = "";
-  let scores = JSON.parse(localStorage.getItem("scores") || "[]");
-  scores.forEach(s => {
-    let li = document.createElement("li");
-    li.innerText = `${s.avatar} ${s.name} - ${s.time}s (L${s.level})`;
-    list.appendChild(li);
-  });
-}
-// initial load of leaderboard
-renderLeaderboard();
+/* ===== SYSTEM ===== */
+function undo(){ path.pop(); }
+function restart(){ path=[]; startTimer(); }
 
-// ===========================================================================
-// END OF GAME SCRIPT: Summary of improvements and enhancements included:
-// ===========================================================================
-// - Redesigned UI: modern minimalist look, consistent color theme and typography.
-// - Responsive layout for different screen sizes【4†L274-L281】【1†L134-L143】.
-// - Smooth CSS transitions and button animations on hover/click【9†L69-L78】【9†L115-L124】.
-// - Subtle shadows, gradients for depth and polished visuals.
-// - Sound effects for clicks/moves/wins/errors, all optional (toggle)【11†L135-L142】【11†L153-L157】.
-// - Optional background music (toggleable) for cozy ambiance.
-// - Level progression: each level has more nodes, gradually harder puzzles【21†L197-L202】.
-// - Win overlay screen showing player, time, and next-level button.
-// - Hint system: show solution path on demand【15†L13-L21】.
-// - Undo/Restart features for better control.
-// - Persistent local leaderboard via localStorage【26†L31-L39】【29†L164-L172】.
-// - Original game logic intact; code refactored for clarity (well-commented, separated concerns).
-// - Performance: optimized animations and minimal libraries for smooth 60FPS.
-// ===========================================================================
-// =============================================================================
-// End of enhanced game code file.
-// =============================================================================
+function start(){
+  document.getElementById("level").innerText=level;
+  graph=new Graph(4+level);
+  path=[];
+  startTimer();
+}
+
+/* ===== INIT ===== */
+start();
+loop();
+
 </script>
+
 </body>
 </html>
